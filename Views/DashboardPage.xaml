@@ -7,8 +7,7 @@
              xmlns:helpers="clr-namespace:Arctrix.PersonalMoneyTracker.Helpers"
              x:Class="Arctrix.PersonalMoneyTracker.Views.DashboardPage"
              x:DataType="vm:DashboardViewModel"
-             Title="{Binding Title}"
-             Shell.NavBarIsVisible="False">
+             Title="{Binding Title}">
 
     <ContentPage.Resources>
         <helpers:HexColorConverter x:Key="HexColor" />
@@ -95,7 +94,7 @@
                             <FormattedString>
                                 <Span Text="{Binding BaseCurrency}" FontSize="20" FontFamily="InterSemiBold" TextColor="{StaticResource Muted}" />
                                 <Span Text=" " />
-                                <Span Text="{Binding NetWorth, StringFormat='{0:N2}'}" />
+                                <Span Text="{Binding NetWorth, StringFormat='{0:N2}'}" FontFamily="InterBold" />
                             </FormattedString>
                         </Label.FormattedText>
                     </Label>
@@ -331,7 +330,7 @@
                                             <FormattedString>
                                                 <Span Text="{Binding Currency}" FontSize="11" TextColor="{StaticResource Muted}" />
                                                 <Span Text=" " />
-                                                <Span Text="{Binding Balance, StringFormat='{0:N2}'}" />
+                                                <Span Text="{Binding Balance, StringFormat='{0:N2}'}" FontFamily="InterSemiBold" />
                                             </FormattedString>
                                         </Label.FormattedText>
                                     </Label>

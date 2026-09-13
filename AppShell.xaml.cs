@@ -75,14 +75,37 @@ public partial class AppShell : Shell
         }
     }
 
+    protected override void OnNavigated(ShellNavigatedEventArgs args)
+    {
+        base.OnNavigated(args);
+        UpdateNavBar();
+    }
+
     private void UpdateSidebarMode()
     {
         if (Width <= 0)
             return;
 
         var mode = Width < SidebarCollapseWidth ? FlyoutBehavior.Flyout : FlyoutBehavior.Locked;
-        if (FlyoutBehavior != mode)
-            FlyoutBehavior = mode;
+        if (FlyoutBehavior == mode)
+            return;
+
+        FlyoutBehavior = mode;
+        FlyoutIsPresented = false;
+        UpdateNavBar();
+    }
+
+    /// <summary>
+    /// Section pages draw their own headers, so the nav bar is hidden on them - except when the
+    /// desktop sidebar has collapsed, where the nav bar carries the menu button. Pushed pages
+    /// (forms) are left alone so they keep their back button.
+    /// </summary>
+    private void UpdateNavBar()
+    {
+        if (CurrentPage is not Page page || page.Navigation.NavigationStack.Count > 1)
+            return;
+
+        SetNavBarIsVisible(page, !_usesTabBar && FlyoutBehavior == FlyoutBehavior.Flyout);
     }
 
     private static FlyoutItem CreateSection(string title, string icon, string route, Type pageType)

@@ -5,8 +5,7 @@
              xmlns:helpers="clr-namespace:Arctrix.PersonalMoneyTracker.Helpers"
              x:Class="Arctrix.PersonalMoneyTracker.Views.MorePage"
              x:DataType="vm:MoreViewModel"
-             Title="{Binding Title}"
-             Shell.NavBarIsVisible="False">
+             Title="{Binding Title}">
 
     <ScrollView>
         <VerticalStackLayout Padding="{StaticResource PagePaddingPhone}" Spacing="{StaticResource GapL}">
