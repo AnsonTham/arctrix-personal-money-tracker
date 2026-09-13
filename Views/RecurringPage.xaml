@@ -5,5 +5,164 @@
              x:Class="Arctrix.PersonalMoneyTracker.Views.RecurringPage"
              x:DataType="vm:RecurringViewModel"
              Title="{Binding Title}">
-    <Label Text="{Binding Title}" Margin="24" />
+
+    <Grid x:Name="LayoutRoot"
+          HorizontalOptions="Center"
+          Padding="{StaticResource PagePaddingDesktop}"
+          ColumnDefinitions="*,320"
+          RowDefinitions="Auto,*"
+          ColumnSpacing="24"
+          RowSpacing="20">
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="LayoutStates">
+                <VisualState x:Name="Wide" />
+                <VisualState x:Name="Narrow">
+                    <VisualState.Setters>
+                        <Setter Property="Padding" Value="{StaticResource PagePaddingPhone}" />
+                        <Setter Property="ColumnDefinitions" Value="*" />
+                        <Setter Property="RowDefinitions" Value="Auto,Auto,*" />
+                        <Setter Property="ColumnSpacing" Value="0" />
+                        <Setter Property="RowSpacing" Value="12" />
+
+                        <Setter TargetName="Header" Property="Margin" Value="4,16,4,0" />
+                        <Setter TargetName="SummaryCard" Property="Grid.Row" Value="1" />
+                        <Setter TargetName="SummaryCard" Property="Grid.Column" Value="0" />
+                        <Setter TargetName="ListCard" Property="Grid.Row" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <!-- Header -->
+        <Grid x:Name="Header" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto">
+            <VerticalStackLayout Spacing="4" VerticalOptions="Center">
+                <Label Text="{Binding Title}" Style="{StaticResource H1}" />
+                <Label Text="{Binding CountLabel}" Style="{StaticResource Body}" />
+            </VerticalStackLayout>
+            <Button Grid.Column="1"
+                    Text="Add recurring"
+                    VerticalOptions="Center"
+                    Command="{Binding AddRecurringCommand}" />
+        </Grid>
+
+        <!-- Payments -->
+        <Border x:Name="ListCard" Grid.Row="1" Style="{StaticResource Card}" Padding="8,4">
+            <CollectionView ItemsSource="{Binding Payments}" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:RecurringRowViewModel">
+                        <Border Background="Transparent" StrokeThickness="0" StrokeShape="RoundRectangle 12" Padding="12">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroupList>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal" />
+                                        <VisualState x:Name="PointerOver">
+                                            <VisualState.Setters>
+                                                <Setter Property="Background" Value="{StaticResource Surface2Brush}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateGroupList>
+                            </VisualStateManager.VisualStateGroups>
+
+                            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="14">
+                                <Border Style="{StaticResource IconTile}">
+                                    <Label Text="{Binding CategoryIcon}" FontSize="18" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                    <Label Text="{Binding Name}" Style="{StaticResource BodyStrong}" MaxLines="1" LineBreakMode="TailTruncation" />
+                                    <Label Text="{Binding ScheduleLabel}" Style="{StaticResource Caption}" MaxLines="1" LineBreakMode="TailTruncation" />
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout Grid.Column="2" Spacing="2" VerticalOptions="Center">
+                                    <Label Text="{Binding AmountLabel}" Style="{StaticResource Amount}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsIncome}" Value="True">
+                                                <Setter Property="TextColor" Value="{StaticResource Positive}" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                    <Label Text="{Binding DueLabel}" Style="{StaticResource Caption}" HorizontalTextAlignment="End">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsOverdue}" Value="True">
+                                                <Setter Property="TextColor" Value="{StaticResource Negative}" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </VerticalStackLayout>
+
+                                <Button Grid.Column="3"
+                                        Text="Stop"
+                                        Style="{StaticResource GhostButton}"
+                                        FontSize="12"
+                                        MinimumHeightRequest="32"
+                                        Padding="10,0"
+                                        VerticalOptions="Center"
+                                        CommandParameter="{Binding .}">
+                                    <Button.Command>
+                                        <Binding Path="StopCommand"
+                                                 Source="{RelativeSource AncestorType={x:Type vm:RecurringViewModel}}"
+                                                 x:DataType="vm:RecurringViewModel" />
+                                    </Button.Command>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="16,48" Spacing="12" HorizontalOptions="Center">
+                        <Label Text="No recurring payments" Style="{StaticResource H3}" HorizontalTextAlignment="Center" />
+                        <Label Text="Add subscriptions, rent or salary and they'll post automatically on their due date."
+                               Style="{StaticResource Body}"
+                               HorizontalTextAlignment="Center" />
+                        <Button Text="Add recurring" HorizontalOptions="Center" Command="{Binding AddRecurringCommand}" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+            </CollectionView>
+        </Border>
+
+        <!-- Summary -->
+        <Border x:Name="SummaryCard"
+                Grid.Row="1"
+                Grid.Column="1"
+                Style="{StaticResource Card}"
+                VerticalOptions="Start">
+            <VerticalStackLayout Spacing="18">
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Monthly commitments" Style="{StaticResource Overline}" />
+                    <Label Style="{StaticResource AmountLarge}" FontSize="30">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="{Binding BaseCurrency}" FontSize="15" FontFamily="InterSemiBold" TextColor="{StaticResource Muted}" />
+                                <Span Text=" " />
+                                <Span Text="{Binding MonthlyOutflow, StringFormat='{0:N2}'}" FontFamily="InterBold" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+                    <Label Text="Recurring spending each month" Style="{StaticResource Caption}" />
+                </VerticalStackLayout>
+
+                <BoxView Style="{StaticResource Divider}" />
+
+                <Grid ColumnDefinitions="*,Auto">
+                    <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                        <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource Positive}" VerticalOptions="Center" />
+                        <Label Text="Recurring income" Style="{StaticResource Body}" />
+                    </HorizontalStackLayout>
+                    <Label Grid.Column="1" Text="{Binding MonthlyInflow, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" />
+                </Grid>
+
+                <BoxView Style="{StaticResource Divider}" />
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Next up" Style="{StaticResource Overline}" />
+                    <Label Text="{Binding NextUpLabel}" Style="{StaticResource BodyStrong}" />
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </Border>
+
+    </Grid>
+
 </ContentPage>

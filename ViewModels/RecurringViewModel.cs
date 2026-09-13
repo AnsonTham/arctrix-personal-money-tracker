@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Arctrix.PersonalMoneyTracker.Helpers;
 using Arctrix.PersonalMoneyTracker.Models;
 using Arctrix.PersonalMoneyTracker.Services;
 
@@ -11,18 +12,28 @@ public partial class RecurringViewModel : ViewModelBase
     private readonly IRecurringPaymentService _recurring;
     private readonly IAccountService _accounts;
     private readonly ICategoryService _categories;
+    private readonly ISettingsService _settings;
 
-    public RecurringViewModel(IRecurringPaymentService recurring, IAccountService accounts, ICategoryService categories)
+    public RecurringViewModel(
+        IRecurringPaymentService recurring,
+        IAccountService accounts,
+        ICategoryService categories,
+        ISettingsService settings)
     {
         _recurring = recurring;
         _accounts = accounts;
         _categories = categories;
+        _settings = settings;
         Title = "Recurring";
     }
 
-    public ObservableCollection<RecurringPayment> Payments { get; } = new();
+    [ObservableProperty] public partial string BaseCurrency { get; set; } = "MYR";
+    [ObservableProperty] public partial decimal MonthlyOutflow { get; set; }
+    [ObservableProperty] public partial decimal MonthlyInflow { get; set; }
+    [ObservableProperty] public partial string CountLabel { get; set; } = string.Empty;
+    [ObservableProperty] public partial string NextUpLabel { get; set; } = string.Empty;
 
-    [ObservableProperty] public partial bool IsEmpty { get; set; }
+    public ObservableCollection<RecurringRowViewModel> Payments { get; } = new();
 
     [RelayCommand]
     public async Task LoadAsync()
@@ -30,10 +41,32 @@ public partial class RecurringViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            var all = await _recurring.GetAllAsync();
+            BaseCurrency = (await _settings.GetAsync()).BaseCurrency;
+
+            var payments = (await _recurring.GetAllAsync()).OrderBy(p => p.NextDueDate).ToList();
+            var categories = (await _categories.GetAllAsync(includeArchived: true)).ToDictionary(c => c.Id);
+            var accounts = (await _accounts.GetAllAsync(includeArchived: true)).ToDictionary(a => a.Id);
+
             Payments.Clear();
-            foreach (var p in all.OrderBy(p => p.NextDueDate)) Payments.Add(p);
-            IsEmpty = Payments.Count == 0;
+            foreach (var payment in payments)
+            {
+                categories.TryGetValue(payment.CategoryId, out var category);
+                accounts.TryGetValue(payment.AccountId, out var account);
+                Payments.Add(new RecurringRowViewModel
+                {
+                    Payment = payment,
+                    CategoryName = category?.Name ?? "Others",
+                    CategoryIcon = category?.Icon ?? "•",
+                    AccountName = account?.Name ?? string.Empty
+                });
+            }
+
+            MonthlyOutflow = payments.Where(p => p.Type == TransactionType.Expense).Sum(p => p.Amount);
+            MonthlyInflow = payments.Where(p => p.Type == TransactionType.Income).Sum(p => p.Amount);
+            CountLabel = payments.Count == 1 ? "1 active payment" : $"{payments.Count} active payments";
+            NextUpLabel = Payments.FirstOrDefault() is RecurringRowViewModel next
+                ? $"{next.Name} · {next.DueLabel}"
+                : "Nothing scheduled";
         }
         finally
         {
@@ -42,9 +75,20 @@ public partial class RecurringViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task Deactivate(RecurringPayment payment)
+    private Task AddRecurring() => Shell.Current.GoToAsync(Routes.AddRecurring);
+
+    [RelayCommand]
+    private async Task Stop(RecurringRowViewModel row)
     {
-        await _recurring.DeactivateAsync(payment.Id);
+        var confirmed = await Shell.Current.DisplayAlertAsync(
+            $"Stop {row.Name}?",
+            "No further transactions will be posted for it. Transactions already posted are kept.",
+            "Stop",
+            "Keep");
+        if (!confirmed)
+            return;
+
+        await _recurring.DeactivateAsync(row.Payment.Id);
         await LoadAsync();
     }
 }
