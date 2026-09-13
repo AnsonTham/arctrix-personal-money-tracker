@@ -29,7 +29,7 @@
                 </VisualStateGroup>
             </VisualStateManager.VisualStateGroups>
 
-            <Border x:Name="FormCard" Style="{StaticResource Card}" Padding="28">
+            <Border x:Name="FormCard" Style="{StaticResource Card}" Padding="28" VerticalOptions="Start">
                 <VerticalStackLayout Spacing="26">
 
                     <!-- Type -->
@@ -139,7 +139,7 @@
                         <VerticalStackLayout x:Name="FromField" Spacing="10">
                             <Label Text="{Binding AccountLabel}" Style="{StaticResource Overline}" />
                             <Border Style="{StaticResource InputShell}">
-                                <Picker Title="Choose account"
+                                <Picker Title="{OnPlatform Default='Choose account', WinUI={x:Null}}"
                                         ItemsSource="{Binding Accounts}"
                                         SelectedItem="{Binding SelectedAccount}">
                                     <Picker.ItemDisplayBinding>
@@ -152,7 +152,7 @@
                         <VerticalStackLayout x:Name="ToField" Grid.Column="1" Spacing="10" IsVisible="{Binding ShowToAccount}">
                             <Label Text="To account" Style="{StaticResource Overline}" />
                             <Border Style="{StaticResource InputShell}">
-                                <Picker Title="Choose account"
+                                <Picker Title="{OnPlatform Default='Choose account', WinUI={x:Null}}"
                                         ItemsSource="{Binding Accounts}"
                                         SelectedItem="{Binding SelectedToAccount}">
                                     <Picker.ItemDisplayBinding>

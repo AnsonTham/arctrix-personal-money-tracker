@@ -1,12 +1,29 @@
+using Arctrix.PersonalMoneyTracker.Helpers;
 using Arctrix.PersonalMoneyTracker.ViewModels;
 
 namespace Arctrix.PersonalMoneyTracker.Views;
 
 public partial class AddAccountPage : ContentPage
 {
+    private const double FormMaxWidth = 640;
+
+    private readonly AddAccountViewModel _viewModel;
+
     public AddAccountPage(AddAccountViewModel viewModel)
     {
         InitializeComponent();
-        BindingContext = viewModel;
+        BindingContext = _viewModel = viewModel;
+    }
+
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        await _viewModel.LoadCommand.ExecuteAsync(null);
+    }
+
+    protected override void OnSizeAllocated(double width, double height)
+    {
+        base.OnSizeAllocated(width, height);
+        Responsive.Apply(LayoutRoot, width, FormMaxWidth);
     }
 }

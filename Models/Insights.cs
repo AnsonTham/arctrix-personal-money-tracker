@@ -22,5 +22,8 @@ public class CategorySpend
     public double Share => PercentOfTotal / 100.0;
 }
 
+/// <summary>A labelled slice of a total, e.g. balance held in one account type. Share is 0–1.</summary>
+public record BalanceShare(string Label, decimal Amount, double Share);
+
 /// <summary>One labelled value on a chart axis.</summary>
 public record ChartPoint(string Label, double Value);

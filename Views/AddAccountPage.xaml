@@ -5,5 +5,91 @@
              x:Class="Arctrix.PersonalMoneyTracker.Views.AddAccountPage"
              x:DataType="vm:AddAccountViewModel"
              Title="{Binding Title}">
-    <Label Text="{Binding Title}" Margin="24" />
+
+    <ScrollView>
+        <Grid x:Name="LayoutRoot" HorizontalOptions="Center" Padding="32,28,32,40">
+
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="LayoutStates">
+                    <VisualState x:Name="Wide" />
+                    <VisualState x:Name="Narrow">
+                        <VisualState.Setters>
+                            <Setter Property="Padding" Value="{StaticResource PagePaddingPhone}" />
+                            <Setter TargetName="FormCard" Property="Padding" Value="18" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+
+            <Border x:Name="FormCard" Style="{StaticResource Card}" Padding="28" VerticalOptions="Start">
+                <VerticalStackLayout Spacing="24">
+
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Account name" Style="{StaticResource Overline}" />
+                        <Border Style="{StaticResource InputShell}">
+                            <Entry Text="{Binding Name}" Placeholder="e.g. Maybank Savings" MaxLength="80" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Type" Style="{StaticResource Overline}" />
+                        <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding TypeOptions}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:AccountTypeOption">
+                                    <Border Style="{StaticResource Chip}" Margin="0,0,8,8">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer CommandParameter="{Binding .}">
+                                                <TapGestureRecognizer.Command>
+                                                    <Binding Path="SelectTypeCommand"
+                                                             Source="{RelativeSource AncestorType={x:Type vm:AddAccountViewModel}}"
+                                                             x:DataType="vm:AddAccountViewModel" />
+                                                </TapGestureRecognizer.Command>
+                                            </TapGestureRecognizer>
+                                        </Border.GestureRecognizers>
+                                        <Border.Triggers>
+                                            <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+                                                <Setter Property="Stroke" Value="{StaticResource AccentBrush}" />
+                                            </DataTrigger>
+                                        </Border.Triggers>
+                                        <Label Text="{Binding Label}" FontFamily="InterMedium" FontSize="13" TextColor="{StaticResource TextSecondary}">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="TextColor" Value="{StaticResource Accent}" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+                    </VerticalStackLayout>
+
+                    <Grid ColumnDefinitions="140,*" ColumnSpacing="16">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="Currency" Style="{StaticResource Overline}" />
+                            <Border Style="{StaticResource InputShell}">
+                                <Picker ItemsSource="{Binding SupportedCurrencies}" SelectedItem="{Binding Currency}" />
+                            </Border>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="10">
+                            <Label Text="Starting balance" Style="{StaticResource Overline}" />
+                            <Border Style="{StaticResource InputShell}">
+                                <Entry Text="{Binding StartingBalanceText}" Placeholder="0.00" Keyboard="Numeric" />
+                            </Border>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorText}" IsVisible="{Binding HasError}" />
+
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                        <Button Grid.Column="1" Text="Cancel" Style="{StaticResource GhostButton}" Command="{Binding CancelCommand}" />
+                        <Button Grid.Column="2" Text="Add account" Command="{Binding SaveCommand}" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+    </ScrollView>
+
 </ContentPage>

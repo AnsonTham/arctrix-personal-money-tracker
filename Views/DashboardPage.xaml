@@ -4,14 +4,9 @@
              xmlns:vm="clr-namespace:Arctrix.PersonalMoneyTracker.ViewModels"
              xmlns:models="clr-namespace:Arctrix.PersonalMoneyTracker.Models"
              xmlns:controls="clr-namespace:Arctrix.PersonalMoneyTracker.Controls"
-             xmlns:helpers="clr-namespace:Arctrix.PersonalMoneyTracker.Helpers"
              x:Class="Arctrix.PersonalMoneyTracker.Views.DashboardPage"
              x:DataType="vm:DashboardViewModel"
              Title="{Binding Title}">
-
-    <ContentPage.Resources>
-        <helpers:HexColorConverter x:Key="HexColor" />
-    </ContentPage.Resources>
 
     <ScrollView>
         <!--
@@ -323,7 +318,7 @@
                                              VerticalOptions="Center" />
                                     <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
                                         <Label Text="{Binding Name}" Style="{StaticResource BodyStrong}" />
-                                        <Label Text="{Binding Type}" Style="{StaticResource Caption}" />
+                                        <Label Text="{Binding Type, Converter={StaticResource AccountTypeLabel}}" Style="{StaticResource Caption}" />
                                     </VerticalStackLayout>
                                     <Label Grid.Column="2" Style="{StaticResource Amount}" VerticalOptions="Center">
                                         <Label.FormattedText>

@@ -32,6 +32,11 @@
             <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="Transparent" />
             <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="Transparent" />
             <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="Transparent" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundPressed" Color="Transparent" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundSelected" Color="Transparent" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPressed" Color="Transparent" />
 
             <!-- Inputs sit inside design-system InputShell borders (Resources/Styles/Styles.xaml),
                  so WinUI's own borders, fills and focus underline are removed. -->

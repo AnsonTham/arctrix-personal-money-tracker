@@ -2,8 +2,170 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Arctrix.PersonalMoneyTracker.ViewModels"
+             xmlns:models="clr-namespace:Arctrix.PersonalMoneyTracker.Models"
+             xmlns:controls="clr-namespace:Arctrix.PersonalMoneyTracker.Controls"
              x:Class="Arctrix.PersonalMoneyTracker.Views.AccountsPage"
              x:DataType="vm:AccountsViewModel"
              Title="{Binding Title}">
-    <Label Text="{Binding Title}" Margin="24" />
+
+    <Grid x:Name="LayoutRoot"
+          HorizontalOptions="Center"
+          Padding="{StaticResource PagePaddingDesktop}"
+          ColumnDefinitions="*,320"
+          RowDefinitions="Auto,*"
+          ColumnSpacing="24"
+          RowSpacing="20">
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="LayoutStates">
+                <VisualState x:Name="Wide" />
+                <VisualState x:Name="Narrow">
+                    <VisualState.Setters>
+                        <Setter Property="Padding" Value="{StaticResource PagePaddingPhone}" />
+                        <Setter Property="ColumnDefinitions" Value="*" />
+                        <Setter Property="RowDefinitions" Value="Auto,Auto,*" />
+                        <Setter Property="ColumnSpacing" Value="0" />
+                        <Setter Property="RowSpacing" Value="12" />
+
+                        <Setter TargetName="Header" Property="Margin" Value="4,16,4,0" />
+                        <Setter TargetName="SummaryCard" Property="Grid.Row" Value="1" />
+                        <Setter TargetName="SummaryCard" Property="Grid.Column" Value="0" />
+                        <Setter TargetName="AccountList" Property="Grid.Row" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <!-- Header -->
+        <Grid x:Name="Header" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto">
+            <VerticalStackLayout Spacing="4" VerticalOptions="Center">
+                <Label Text="{Binding Title}" Style="{StaticResource H1}" />
+                <Label Text="{Binding AccountCountLabel}" Style="{StaticResource Body}" />
+            </VerticalStackLayout>
+            <Button Grid.Column="1"
+                    Text="Add account"
+                    VerticalOptions="Center"
+                    Command="{Binding AddAccountCommand}" />
+        </Grid>
+
+        <!-- Account cards -->
+        <CollectionView x:Name="AccountList"
+                        Grid.Row="1"
+                        ItemsSource="{Binding Accounts}"
+                        SelectionMode="None">
+            <CollectionView.ItemsLayout>
+                <!-- Span drops to 1 on narrow widths in code-behind; an ItemsLayout isn't a VisualElement, so layout states can't target it. -->
+                <GridItemsLayout x:Name="AccountGridLayout" Orientation="Vertical" Span="2" HorizontalItemSpacing="12" VerticalItemSpacing="12" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:Account">
+                    <Border Style="{StaticResource Card}">
+                        <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="16">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                <Border Style="{StaticResource IconTile}">
+                                    <BoxView WidthRequest="12"
+                                             HeightRequest="12"
+                                             CornerRadius="6"
+                                             Color="{Binding ColorHex, Converter={StaticResource HexColor}}"
+                                             HorizontalOptions="Center"
+                                             VerticalOptions="Center" />
+                                </Border>
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                    <Label Text="{Binding Name}" Style="{StaticResource BodyStrong}" MaxLines="1" LineBreakMode="TailTruncation" />
+                                    <Label Text="{Binding Type, Converter={StaticResource AccountTypeLabel}}" Style="{StaticResource Caption}" />
+                                </VerticalStackLayout>
+                                <Button Grid.Column="2"
+                                        Text="Archive"
+                                        Style="{StaticResource GhostButton}"
+                                        FontSize="12"
+                                        MinimumHeightRequest="32"
+                                        Padding="10,0"
+                                        VerticalOptions="Center"
+                                        CommandParameter="{Binding .}">
+                                    <Button.Command>
+                                        <Binding Path="ArchiveCommand"
+                                                 Source="{RelativeSource AncestorType={x:Type vm:AccountsViewModel}}"
+                                                 x:DataType="vm:AccountsViewModel" />
+                                    </Button.Command>
+                                </Button>
+                            </Grid>
+
+                            <Label Grid.Row="1" Style="{StaticResource AmountLarge}">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="{Binding Currency}" FontSize="14" FontFamily="InterSemiBold" TextColor="{StaticResource Muted}" />
+                                        <Span Text=" " />
+                                        <Span Text="{Binding Balance, StringFormat='{0:N2}'}" FontFamily="InterBold" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+
+                            <Label Grid.Row="2"
+                                   Text="{Binding CreatedAt, StringFormat='Added {0:d MMM yyyy}'}"
+                                   Style="{StaticResource Caption}" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+            <CollectionView.EmptyView>
+                <VerticalStackLayout Padding="16,48" Spacing="8" HorizontalOptions="Center">
+                    <Label Text="No accounts yet" Style="{StaticResource H3}" HorizontalTextAlignment="Center" />
+                    <Label Text="Add a bank account, cash wallet or e-wallet to start tracking balances."
+                           Style="{StaticResource Body}"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+        </CollectionView>
+
+        <!-- Totals -->
+        <Border x:Name="SummaryCard"
+                Grid.Row="1"
+                Grid.Column="1"
+                Style="{StaticResource Card}"
+                VerticalOptions="Start">
+            <VerticalStackLayout Spacing="18">
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Total balance" Style="{StaticResource Overline}" />
+                    <Label Style="{StaticResource AmountLarge}" FontSize="30">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="{Binding BaseCurrency}" FontSize="15" FontFamily="InterSemiBold" TextColor="{StaticResource Muted}" />
+                                <Span Text=" " />
+                                <Span Text="{Binding TotalBalance, StringFormat='{0:N2}'}" FontFamily="InterBold" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+                </VerticalStackLayout>
+
+                <BoxView Style="{StaticResource Divider}" />
+
+                <VerticalStackLayout Spacing="14" BindableLayout.ItemsSource="{Binding Breakdown}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="models:BalanceShare">
+                            <VerticalStackLayout Spacing="7">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Label Text="{Binding Label}" Style="{StaticResource BodyStrong}" VerticalOptions="Center" />
+                                    <Label Grid.Column="1" VerticalOptions="Center">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding Amount, StringFormat='{0:N2}'}" FontFamily="InterSemiBold" TextColor="{StaticResource TextPrimary}" />
+                                                <Span Text="   " />
+                                                <Span Text="{Binding Share, StringFormat='{0:P0}'}" FontSize="12" TextColor="{StaticResource Muted}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                </Grid>
+                                <controls:ProportionBar Value="{Binding Share}"
+                                                        BarColor="{StaticResource Accent}"
+                                                        TrackColor="{StaticResource Surface3}" />
+                            </VerticalStackLayout>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </Border>
+
+    </Grid>
+
 </ContentPage>

@@ -1,3 +1,4 @@
+using Arctrix.PersonalMoneyTracker.Helpers;
 using Arctrix.PersonalMoneyTracker.ViewModels;
 
 namespace Arctrix.PersonalMoneyTracker.Views;
@@ -16,5 +17,15 @@ public partial class AccountsPage : ContentPage
     {
         base.OnAppearing();
         await _viewModel.LoadCommand.ExecuteAsync(null);
+    }
+
+    protected override void OnSizeAllocated(double width, double height)
+    {
+        base.OnSizeAllocated(width, height);
+        Responsive.Apply(LayoutRoot, width);
+
+        var span = width >= Responsive.WideBreakpoint ? 2 : 1;
+        if (AccountGridLayout.Span != span)
+            AccountGridLayout.Span = span;
     }
 }
