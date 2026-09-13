@@ -1,7 +1,7 @@
-using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Arctrix.PersonalMoneyTracker.Helpers;
+using Arctrix.PersonalMoneyTracker.Models;
 using Arctrix.PersonalMoneyTracker.Services;
 
 namespace Arctrix.PersonalMoneyTracker.ViewModels;
@@ -13,6 +13,9 @@ public partial class HistoryViewModel : ViewModelBase
     private readonly IAccountService _accounts;
     private readonly ISettingsService _settings;
 
+    private List<TransactionRowViewModel> _all = new();
+    private FilterOption _activeFilter;
+
     public HistoryViewModel(
         ITransactionService transactions,
         ICategoryService categories,
@@ -23,12 +26,32 @@ public partial class HistoryViewModel : ViewModelBase
         _categories = categories;
         _accounts = accounts;
         _settings = settings;
-        Title = "History";
+        Title = "Transactions";
+
+        Filters =
+        [
+            new FilterOption("All", null),
+            new FilterOption("Expenses", TransactionType.Expense),
+            new FilterOption("Income", TransactionType.Income),
+            new FilterOption("Transfers", TransactionType.Transfer),
+            new FilterOption("Investments", TransactionType.Investment)
+        ];
+        _activeFilter = Filters[0];
+        _activeFilter.IsSelected = true;
     }
 
-    public ObservableCollection<TransactionRowViewModel> Transactions { get; } = new();
+    public IReadOnlyList<FilterOption> Filters { get; }
 
-    [ObservableProperty] public partial bool IsEmpty { get; set; }
+    [ObservableProperty] public partial IReadOnlyList<TransactionGroup> Groups { get; set; } = [];
+    [ObservableProperty] public partial string SearchText { get; set; } = string.Empty;
+    [ObservableProperty] public partial string BaseCurrency { get; set; } = "MYR";
+    [ObservableProperty] public partial string ResultLabel { get; set; } = string.Empty;
+    [ObservableProperty] public partial decimal FilteredIncome { get; set; }
+    [ObservableProperty] public partial decimal FilteredExpense { get; set; }
+    [ObservableProperty] public partial string EmptyTitle { get; set; } = string.Empty;
+    [ObservableProperty] public partial string EmptyMessage { get; set; } = string.Empty;
+
+    partial void OnSearchTextChanged(string value) => ApplyFilter();
 
     [RelayCommand]
     public async Task LoadAsync()
@@ -37,30 +60,21 @@ public partial class HistoryViewModel : ViewModelBase
         try
         {
             var settings = await _settings.GetAsync();
-            var all = await _transactions.GetAllAsync();
-            var categories = await _categories.GetAllAsync(includeArchived: true);
-            var accounts = await _accounts.GetAllAsync(includeArchived: true);
+            BaseCurrency = settings.BaseCurrency;
 
-            Transactions.Clear();
-            foreach (var t in all)
-            {
-                var category = categories.FirstOrDefault(c => c.Id == t.CategoryId);
-                var account = accounts.FirstOrDefault(a => a.Id == t.AccountId);
-                Transactions.Add(new TransactionRowViewModel
-                {
-                    Id = t.Id,
-                    Type = t.Type,
-                    CategoryName = category?.Name ?? "Others",
-                    CategoryIcon = category?.Icon ?? "•",
-                    AccountName = account?.Name ?? "",
-                    Date = t.Date,
-                    BaseAmount = t.BaseAmount,
-                    Notes = t.Notes,
-                    BaseCurrency = settings.BaseCurrency
-                });
-            }
+            var records = await _transactions.GetAllAsync();
+            var categories = (await _categories.GetAllAsync(includeArchived: true)).ToDictionary(c => c.Id);
+            var accounts = (await _accounts.GetAllAsync(includeArchived: true)).ToDictionary(a => a.Id);
 
-            IsEmpty = Transactions.Count == 0;
+            _all = records
+                .Select(t => TransactionRowViewModel.From(
+                    t,
+                    categories.GetValueOrDefault(t.CategoryId),
+                    accounts.GetValueOrDefault(t.AccountId),
+                    BaseCurrency))
+                .ToList();
+
+            ApplyFilter();
         }
         finally
         {
@@ -69,6 +83,41 @@ public partial class HistoryViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void SelectFilter(FilterOption option)
+    {
+        _activeFilter.IsSelected = false;
+        _activeFilter = option;
+        _activeFilter.IsSelected = true;
+        ApplyFilter();
+    }
+
+    [RelayCommand]
     private Task OpenTransaction(TransactionRowViewModel row) =>
         Shell.Current.GoToAsync($"{Routes.AddTransaction}?{Routes.TransactionIdParam}={row.Id}");
+
+    [RelayCommand]
+    private Task AddTransaction() => Shell.Current.GoToAsync(Routes.AddTransaction);
+
+    private void ApplyFilter()
+    {
+        var query = SearchText.Trim();
+        var rows = _all
+            .Where(r => _activeFilter.Type is null || r.Type == _activeFilter.Type)
+            .Where(r => query.Length == 0 || r.Matches(query))
+            .ToList();
+
+        // Rows arrive newest first, so day groups keep that order.
+        Groups = rows
+            .GroupBy(r => r.Date.Date)
+            .Select(day => new TransactionGroup(day.Key, day, BaseCurrency))
+            .ToList();
+
+        FilteredIncome = rows.Where(r => r.Type == TransactionType.Income).Sum(r => r.BaseAmount);
+        FilteredExpense = rows.Where(r => r.Type == TransactionType.Expense).Sum(r => r.BaseAmount);
+        ResultLabel = rows.Count == 1 ? "1 transaction" : $"{rows.Count:N0} transactions";
+
+        (EmptyTitle, EmptyMessage) = _all.Count == 0
+            ? ("No transactions yet", "Add your first income or expense to start tracking.")
+            : ("No matches", "Try a different search or filter.");
+    }
 }

@@ -26,6 +26,13 @@
             <SolidColorBrush x:Key="NavigationViewItemBackgroundPressed" Color="#14FFFFFF" />
             <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground" Color="Transparent" />
 
+            <!-- CollectionView rows draw their own rounded hover state, so ListView's item fills are hidden. -->
+            <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="ListViewItemBackgroundPressed" Color="Transparent" />
+            <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="Transparent" />
+            <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="Transparent" />
+
             <!-- Inputs sit inside design-system InputShell borders (Resources/Styles/Styles.xaml),
                  so WinUI's own borders, fills and focus underline are removed. -->
             <Thickness x:Key="TextControlBorderThemeThickness">0</Thickness>

@@ -108,18 +108,7 @@ public partial class DashboardViewModel : ViewModelBase
             {
                 categories.TryGetValue(t.CategoryId, out var category);
                 accountsById.TryGetValue(t.AccountId, out var account);
-                RecentTransactions.Add(new TransactionRowViewModel
-                {
-                    Id = t.Id,
-                    Type = t.Type,
-                    CategoryName = category?.Name ?? "Others",
-                    CategoryIcon = category?.Icon ?? "•",
-                    AccountName = account?.Name ?? "",
-                    Date = t.Date,
-                    BaseAmount = t.BaseAmount,
-                    Notes = t.Notes,
-                    BaseCurrency = BaseCurrency
-                });
+                RecentTransactions.Add(TransactionRowViewModel.From(t, category, account, BaseCurrency));
             }
             ShowRecentEmptyState = RecentTransactions.Count == 0;
         }

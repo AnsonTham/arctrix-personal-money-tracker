@@ -5,5 +5,201 @@
              x:Class="Arctrix.PersonalMoneyTracker.Views.HistoryPage"
              x:DataType="vm:HistoryViewModel"
              Title="{Binding Title}">
-    <Label Text="{Binding Title}" Margin="24" />
+
+    <!-- Not wrapped in a ScrollView: the transaction list virtualizes and scrolls itself. -->
+    <Grid x:Name="LayoutRoot"
+          HorizontalOptions="Center"
+          Padding="{StaticResource PagePaddingDesktop}"
+          ColumnDefinitions="*,300"
+          RowDefinitions="Auto,Auto,*"
+          ColumnSpacing="24"
+          RowSpacing="20">
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="LayoutStates">
+                <VisualState x:Name="Wide" />
+                <VisualState x:Name="Narrow">
+                    <VisualState.Setters>
+                        <Setter Property="Padding" Value="{StaticResource PagePaddingPhone}" />
+                        <Setter Property="ColumnDefinitions" Value="*" />
+                        <Setter Property="ColumnSpacing" Value="0" />
+                        <Setter Property="RowSpacing" Value="12" />
+
+                        <Setter TargetName="Header" Property="Margin" Value="4,16,4,0" />
+                        <Setter TargetName="AddButton" Property="IsVisible" Value="False" />
+
+                        <Setter TargetName="Toolbar" Property="Grid.ColumnDefinitions" Value="*" />
+                        <Setter TargetName="Toolbar" Property="Grid.RowSpacing" Value="12" />
+                        <Setter TargetName="FilterChips" Property="Grid.Row" Value="1" />
+                        <Setter TargetName="FilterChips" Property="Grid.Column" Value="0" />
+                        <Setter TargetName="FilterChips" Property="FlexLayout.JustifyContent" Value="Start" />
+
+                        <Setter TargetName="SummaryCard" Property="IsVisible" Value="False" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <!-- Header -->
+        <Grid x:Name="Header" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto">
+            <VerticalStackLayout Spacing="4" VerticalOptions="Center">
+                <Label Text="{Binding Title}" Style="{StaticResource H1}" />
+                <Label Text="{Binding ResultLabel}" Style="{StaticResource Body}" />
+            </VerticalStackLayout>
+            <Button x:Name="AddButton"
+                    Grid.Column="1"
+                    Text="Add transaction"
+                    VerticalOptions="Center"
+                    Command="{Binding AddTransactionCommand}" />
+        </Grid>
+
+        <!-- One filter row above everything it scopes -->
+        <Grid x:Name="Toolbar"
+              Grid.Row="1"
+              Grid.ColumnSpan="2"
+              ColumnDefinitions="360,*"
+              RowDefinitions="Auto,Auto"
+              ColumnSpacing="16"
+              RowSpacing="0">
+            <Border Style="{StaticResource InputShell}">
+                <Entry Placeholder="Search category, account or notes"
+                       Text="{Binding SearchText}"
+                       ClearButtonVisibility="WhileEditing" />
+            </Border>
+
+            <FlexLayout x:Name="FilterChips"
+                        Grid.Column="1"
+                        Wrap="Wrap"
+                        AlignItems="Center"
+                        JustifyContent="End"
+                        BindableLayout.ItemsSource="{Binding Filters}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:FilterOption">
+                        <Border Style="{StaticResource Chip}" Margin="8,4,0,4">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer CommandParameter="{Binding .}">
+                                    <TapGestureRecognizer.Command>
+                                        <Binding Path="SelectFilterCommand"
+                                                 Source="{RelativeSource AncestorType={x:Type vm:HistoryViewModel}}"
+                                                 x:DataType="vm:HistoryViewModel" />
+                                    </TapGestureRecognizer.Command>
+                                </TapGestureRecognizer>
+                            </Border.GestureRecognizers>
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+                                    <Setter Property="Stroke" Value="{StaticResource AccentBrush}" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                            <Label Text="{Binding Name}" FontFamily="InterMedium" FontSize="13" TextColor="{StaticResource TextSecondary}">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                        <Setter Property="TextColor" Value="{StaticResource Accent}" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </FlexLayout>
+        </Grid>
+
+        <!-- Transaction list -->
+        <Border x:Name="ListCard" Grid.Row="2" Style="{StaticResource Card}" Padding="8,4">
+            <CollectionView ItemsSource="{Binding Groups}" IsGrouped="True" SelectionMode="None">
+                <CollectionView.GroupHeaderTemplate>
+                    <DataTemplate x:DataType="vm:TransactionGroup">
+                        <Grid ColumnDefinitions="*,Auto" Padding="12,18,12,6">
+                            <Label Text="{Binding Title}" Style="{StaticResource Overline}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="{Binding NetLabel}" Style="{StaticResource Caption}" VerticalOptions="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.GroupHeaderTemplate>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:TransactionRowViewModel">
+                        <Border Background="Transparent" StrokeThickness="0" StrokeShape="RoundRectangle 12" Padding="12,10">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroupList>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal" />
+                                        <VisualState x:Name="PointerOver">
+                                            <VisualState.Setters>
+                                                <Setter Property="Background" Value="{StaticResource Surface2Brush}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateGroupList>
+                            </VisualStateManager.VisualStateGroups>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer CommandParameter="{Binding .}">
+                                    <TapGestureRecognizer.Command>
+                                        <Binding Path="OpenTransactionCommand"
+                                                 Source="{RelativeSource AncestorType={x:Type vm:HistoryViewModel}}"
+                                                 x:DataType="vm:HistoryViewModel" />
+                                    </TapGestureRecognizer.Command>
+                                </TapGestureRecognizer>
+                            </Border.GestureRecognizers>
+
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                                <Border Style="{StaticResource IconTile}">
+                                    <Label Text="{Binding CategoryIcon}" FontSize="18" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                    <Label Text="{Binding CategoryName}" Style="{StaticResource BodyStrong}" />
+                                    <Label Text="{Binding Subtitle}" Style="{StaticResource Caption}" MaxLines="1" LineBreakMode="TailTruncation" />
+                                </VerticalStackLayout>
+
+                                <Label Grid.Column="2" Text="{Binding AmountLabel}" Style="{StaticResource Amount}" VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsPositive}" Value="True">
+                                            <Setter Property="TextColor" Value="{StaticResource Positive}" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="16,48" Spacing="8" HorizontalOptions="Center">
+                        <Label Text="{Binding EmptyTitle}" Style="{StaticResource H3}" HorizontalTextAlignment="Center" />
+                        <Label Text="{Binding EmptyMessage}" Style="{StaticResource Body}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+            </CollectionView>
+        </Border>
+
+        <!-- Totals for the current filter (wide only; narrow shows the count in the header) -->
+        <Border x:Name="SummaryCard" Grid.Row="2" Grid.Column="1" Style="{StaticResource Card}" VerticalOptions="Start">
+            <VerticalStackLayout Spacing="16">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Showing" Style="{StaticResource Overline}" />
+                    <Label Text="{Binding ResultLabel}" Style="{StaticResource H3}" />
+                </VerticalStackLayout>
+
+                <BoxView Style="{StaticResource Divider}" />
+
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="14">
+                    <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                        <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource Positive}" VerticalOptions="Center" />
+                        <Label Text="Income" Style="{StaticResource Body}" />
+                    </HorizontalStackLayout>
+                    <Label Grid.Column="1" Text="{Binding FilteredIncome, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" />
+
+                    <HorizontalStackLayout Grid.Row="1" Spacing="8" VerticalOptions="Center">
+                        <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource Negative}" VerticalOptions="Center" />
+                        <Label Text="Spent" Style="{StaticResource Body}" />
+                    </HorizontalStackLayout>
+                    <Label Grid.Row="1" Grid.Column="1" Text="{Binding FilteredExpense, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" />
+                </Grid>
+
+                <Label Text="{Binding BaseCurrency, StringFormat='Amounts in {0}'}" Style="{StaticResource Caption}" />
+            </VerticalStackLayout>
+        </Border>
+
+    </Grid>
+
 </ContentPage>

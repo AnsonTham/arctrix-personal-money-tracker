@@ -26,4 +26,22 @@ public class TransactionRowViewModel
     public string AmountLabel =>
         (Type == TransactionType.Income ? "+ " : Type == TransactionType.Expense ? "- " : "") +
         $"{BaseCurrency} {BaseAmount:N2}";
+
+    public static TransactionRowViewModel From(TransactionRecord record, Category? category, Account? account, string baseCurrency) => new()
+    {
+        Id = record.Id,
+        Type = record.Type,
+        CategoryName = category?.Name ?? "Others",
+        CategoryIcon = category?.Icon ?? "•",
+        AccountName = account?.Name ?? string.Empty,
+        Date = record.Date,
+        BaseAmount = record.BaseAmount,
+        Notes = record.Notes,
+        BaseCurrency = baseCurrency
+    };
+
+    public bool Matches(string query) =>
+        CategoryName.Contains(query, StringComparison.CurrentCultureIgnoreCase)
+        || AccountName.Contains(query, StringComparison.CurrentCultureIgnoreCase)
+        || Notes.Contains(query, StringComparison.CurrentCultureIgnoreCase);
 }
