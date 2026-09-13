@@ -6,25 +6,14 @@ using Arctrix.PersonalMoneyTracker.Services;
 
 namespace Arctrix.PersonalMoneyTracker.ViewModels;
 
-public class CategorySpend
-{
-    public string Name { get; init; } = string.Empty;
-    public string Icon { get; init; } = "•";
-    public string ColorHex { get; init; } = "#8F98A7";
-    public decimal Amount { get; init; }
-    public double PercentOfTotal { get; init; }
-}
-
 public partial class AnalyticsViewModel : ViewModelBase
 {
     private readonly ITransactionService _transactions;
-    private readonly ICategoryService _categories;
     private readonly ISettingsService _settings;
 
-    public AnalyticsViewModel(ITransactionService transactions, ICategoryService categories, ISettingsService settings)
+    public AnalyticsViewModel(ITransactionService transactions, ISettingsService settings)
     {
         _transactions = transactions;
-        _categories = categories;
         _settings = settings;
         Title = "Analytics";
     }
@@ -46,32 +35,12 @@ public partial class AnalyticsViewModel : ViewModelBase
             BaseCurrency = settings.BaseCurrency;
 
             var now = DateTime.Now;
-            var monthTx = await _transactions.GetForMonthAsync(now.Year, now.Month);
-            var categories = await _categories.GetAllAsync(includeArchived: true);
-
-            TotalExpense = monthTx.Where(t => t.Type == TransactionType.Expense).Sum(t => t.BaseAmount);
-            TotalIncome = monthTx.Where(t => t.Type == TransactionType.Income).Sum(t => t.BaseAmount);
-
-            var grouped = monthTx
-                .Where(t => t.Type == TransactionType.Expense)
-                .GroupBy(t => t.CategoryId)
-                .Select(g =>
-                {
-                    var cat = categories.FirstOrDefault(c => c.Id == g.Key);
-                    var sum = g.Sum(t => t.BaseAmount);
-                    return new CategorySpend
-                    {
-                        Name = cat?.Name ?? "Others",
-                        Icon = cat?.Icon ?? "•",
-                        ColorHex = cat?.ColorHex ?? "#8F98A7",
-                        Amount = sum,
-                        PercentOfTotal = TotalExpense == 0 ? 0 : (double)(sum / TotalExpense) * 100.0
-                    };
-                })
-                .OrderByDescending(c => c.Amount);
+            TotalExpense = await _transactions.GetMonthlyTotalAsync(TransactionType.Expense, now.Year, now.Month);
+            TotalIncome = await _transactions.GetMonthlyTotalAsync(TransactionType.Income, now.Year, now.Month);
 
             SpendByCategory.Clear();
-            foreach (var c in grouped) SpendByCategory.Add(c);
+            foreach (var c in await _transactions.GetCategorySpendAsync(now.Year, now.Month))
+                SpendByCategory.Add(c);
         }
         finally
         {

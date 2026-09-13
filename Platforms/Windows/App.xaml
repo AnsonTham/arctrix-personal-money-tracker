@@ -17,6 +17,15 @@
             <Color x:Key="SystemAccentColorDark2">#FFA87F30</Color>
             <Color x:Key="SystemAccentColorDark3">#FF866424</Color>
 
+            <!-- Sidebar: the Shell item template (AppShell.xaml) draws its own selected pill,
+                 so NavigationView's selection fill and indicator bar are hidden. -->
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected" Color="Transparent" />
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPressed" Color="Transparent" />
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver" Color="#0DFFFFFF" />
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundPressed" Color="#14FFFFFF" />
+            <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground" Color="Transparent" />
+
             <!-- Inputs sit inside design-system InputShell borders (Resources/Styles/Styles.xaml),
                  so WinUI's own borders, fills and focus underline are removed. -->
             <Thickness x:Key="TextControlBorderThemeThickness">0</Thickness>

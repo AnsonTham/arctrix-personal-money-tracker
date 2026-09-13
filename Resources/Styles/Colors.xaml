@@ -33,7 +33,7 @@
     <Color x:Key="TextPrimary">#EEF1F5</Color>
     <Color x:Key="TextSecondary">#B4BCC8</Color>
     <Color x:Key="Muted">#8F98A7</Color>
-    <Color x:Key="TextFaint">#5E6673</Color>
+    <Color x:Key="TextFaint">#7E8795</Color>
 
     <!-- Solid brushes -->
     <SolidColorBrush x:Key="BgBrush" Color="{StaticResource Bg}" />

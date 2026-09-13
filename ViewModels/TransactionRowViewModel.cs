@@ -19,6 +19,8 @@ public class TransactionRowViewModel
         : Date.Date == DateTime.Today.AddDays(-1) ? "Yesterday"
         : Date.ToString("d MMM");
 
+    public string Subtitle => string.IsNullOrWhiteSpace(Notes) ? AccountName : $"{AccountName} · {Notes}";
+
     public bool IsPositive => Type == TransactionType.Income;
 
     public string AmountLabel =>
