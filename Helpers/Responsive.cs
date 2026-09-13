@@ -13,14 +13,14 @@ public static class Responsive
     /// Puts <paramref name="layoutRoot"/> into its "Wide" or "Narrow" visual state and caps
     /// its width so desktop content doesn't stretch edge to edge.
     /// </summary>
-    public static void Apply(VisualElement layoutRoot, double pageWidth)
+    public static void Apply(VisualElement layoutRoot, double pageWidth, double maxContentWidth = MaxContentWidth)
     {
         if (pageWidth <= 0)
             return;
 
         VisualStateManager.GoToState(layoutRoot, pageWidth >= WideBreakpoint ? "Wide" : "Narrow");
 
-        var width = Math.Min(pageWidth, MaxContentWidth);
+        var width = Math.Min(pageWidth, maxContentWidth);
         if (Math.Abs(layoutRoot.WidthRequest - width) > 0.5)
             layoutRoot.WidthRequest = width;
     }

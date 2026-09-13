@@ -23,7 +23,11 @@
 
     <Shell.ItemTemplate>
         <DataTemplate x:DataType="BaseShellItem">
-            <Grid Padding="0,2" WidthRequest="216" HeightRequest="48" HorizontalOptions="Start">
+            <Grid Padding="0,2"
+                  WidthRequest="216"
+                  HeightRequest="48"
+                  HorizontalOptions="Start"
+                  SemanticProperties.Description="{Binding Title}">
                 <Border x:Name="Pill"
                         Background="Transparent"
                         StrokeThickness="0"

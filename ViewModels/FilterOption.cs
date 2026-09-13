@@ -3,7 +3,10 @@ using Arctrix.PersonalMoneyTracker.Models;
 
 namespace Arctrix.PersonalMoneyTracker.ViewModels;
 
-/// <summary>A selectable transaction-type filter chip. A null <see cref="Type"/> means "all".</summary>
+/// <summary>
+/// A selectable transaction-type chip, used for list filters and the type picker.
+/// A null <see cref="Type"/> means "all".
+/// </summary>
 public partial class FilterOption : ObservableObject
 {
     public FilterOption(string name, TransactionType? type)

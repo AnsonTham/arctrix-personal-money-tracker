@@ -2,8 +2,201 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Arctrix.PersonalMoneyTracker.ViewModels"
+             xmlns:models="clr-namespace:Arctrix.PersonalMoneyTracker.Models"
              x:Class="Arctrix.PersonalMoneyTracker.Views.AddEditTransactionPage"
              x:DataType="vm:AddEditTransactionViewModel"
              Title="{Binding Title}">
-    <Label Text="{Binding Title}" Margin="24" />
+
+    <ScrollView>
+        <Grid x:Name="LayoutRoot" HorizontalOptions="Center" Padding="32,28,32,40">
+
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="LayoutStates">
+                    <VisualState x:Name="Wide" />
+                    <VisualState x:Name="Narrow">
+                        <VisualState.Setters>
+                            <Setter Property="Padding" Value="{StaticResource PagePaddingPhone}" />
+                            <Setter TargetName="FormCard" Property="Padding" Value="18" />
+                            <Setter TargetName="FieldsGrid" Property="Grid.ColumnDefinitions" Value="*" />
+                            <Setter TargetName="FieldsGrid" Property="Grid.RowDefinitions" Value="Auto,Auto,Auto,Auto" />
+                            <Setter TargetName="ToField" Property="Grid.Row" Value="1" />
+                            <Setter TargetName="ToField" Property="Grid.Column" Value="0" />
+                            <Setter TargetName="DateField" Property="Grid.Row" Value="2" />
+                            <Setter TargetName="NotesField" Property="Grid.Row" Value="3" />
+                            <Setter TargetName="NotesField" Property="Grid.Column" Value="0" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+
+            <Border x:Name="FormCard" Style="{StaticResource Card}" Padding="28">
+                <VerticalStackLayout Spacing="26">
+
+                    <!-- Type -->
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Type" Style="{StaticResource Overline}" />
+                        <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding TypeOptions}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:FilterOption">
+                                    <Border Style="{StaticResource Chip}" Margin="0,0,8,8">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer CommandParameter="{Binding .}">
+                                                <TapGestureRecognizer.Command>
+                                                    <Binding Path="SelectTypeCommand"
+                                                             Source="{RelativeSource AncestorType={x:Type vm:AddEditTransactionViewModel}}"
+                                                             x:DataType="vm:AddEditTransactionViewModel" />
+                                                </TapGestureRecognizer.Command>
+                                            </TapGestureRecognizer>
+                                        </Border.GestureRecognizers>
+                                        <Border.Triggers>
+                                            <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+                                                <Setter Property="Stroke" Value="{StaticResource AccentBrush}" />
+                                            </DataTrigger>
+                                        </Border.Triggers>
+                                        <Label Text="{Binding Name}" FontFamily="InterMedium" FontSize="13" TextColor="{StaticResource TextSecondary}">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="TextColor" Value="{StaticResource Accent}" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+                    </VerticalStackLayout>
+
+                    <!-- Amount -->
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Amount" Style="{StaticResource Overline}" />
+                        <Border Style="{StaticResource InputShell}" Padding="16,4">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                <Picker ItemsSource="{Binding SupportedCurrencies}"
+                                        SelectedItem="{Binding CurrencyCode}"
+                                        FontFamily="InterSemiBold"
+                                        FontSize="17"
+                                        TextColor="{StaticResource Muted}"
+                                        WidthRequest="90"
+                                        VerticalOptions="Center" />
+                                <Entry Grid.Column="1"
+                                       Text="{Binding AmountText}"
+                                       Placeholder="0.00"
+                                       Keyboard="Numeric"
+                                       FontFamily="InterSemiBold"
+                                       FontSize="30"
+                                       MinimumHeightRequest="64"
+                                       VerticalOptions="Center" />
+                            </Grid>
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <!-- Category -->
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Category" Style="{StaticResource Overline}" />
+                        <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding CategoryOptions}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:CategoryOption">
+                                    <Border Style="{StaticResource Chip}" Margin="0,0,8,8" Padding="12,8">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer CommandParameter="{Binding .}">
+                                                <TapGestureRecognizer.Command>
+                                                    <Binding Path="SelectCategoryCommand"
+                                                             Source="{RelativeSource AncestorType={x:Type vm:AddEditTransactionViewModel}}"
+                                                             x:DataType="vm:AddEditTransactionViewModel" />
+                                                </TapGestureRecognizer.Command>
+                                            </TapGestureRecognizer>
+                                        </Border.GestureRecognizers>
+                                        <Border.Triggers>
+                                            <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+                                                <Setter Property="Stroke" Value="{StaticResource AccentBrush}" />
+                                            </DataTrigger>
+                                        </Border.Triggers>
+                                        <HorizontalStackLayout Spacing="8">
+                                            <Label Text="{Binding Category.Icon}" FontSize="15" VerticalOptions="Center" />
+                                            <Label Text="{Binding Category.Name}" FontFamily="InterMedium" FontSize="13" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center">
+                                                <Label.Triggers>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="TextColor" Value="{StaticResource Accent}" />
+                                                    </DataTrigger>
+                                                </Label.Triggers>
+                                            </Label>
+                                        </HorizontalStackLayout>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+                    </VerticalStackLayout>
+
+                    <!-- Accounts, date, notes -->
+                    <Grid x:Name="FieldsGrid"
+                          ColumnDefinitions="*,*"
+                          RowDefinitions="Auto,Auto"
+                          ColumnSpacing="16"
+                          RowSpacing="22">
+
+                        <VerticalStackLayout x:Name="FromField" Spacing="10">
+                            <Label Text="{Binding AccountLabel}" Style="{StaticResource Overline}" />
+                            <Border Style="{StaticResource InputShell}">
+                                <Picker Title="Choose account"
+                                        ItemsSource="{Binding Accounts}"
+                                        SelectedItem="{Binding SelectedAccount}">
+                                    <Picker.ItemDisplayBinding>
+                                        <Binding Path="Name" x:DataType="models:Account" />
+                                    </Picker.ItemDisplayBinding>
+                                </Picker>
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout x:Name="ToField" Grid.Column="1" Spacing="10" IsVisible="{Binding ShowToAccount}">
+                            <Label Text="To account" Style="{StaticResource Overline}" />
+                            <Border Style="{StaticResource InputShell}">
+                                <Picker Title="Choose account"
+                                        ItemsSource="{Binding Accounts}"
+                                        SelectedItem="{Binding SelectedToAccount}">
+                                    <Picker.ItemDisplayBinding>
+                                        <Binding Path="Name" x:DataType="models:Account" />
+                                    </Picker.ItemDisplayBinding>
+                                </Picker>
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout x:Name="DateField" Grid.Row="1" Spacing="10">
+                            <Label Text="Date" Style="{StaticResource Overline}" />
+                            <Border Style="{StaticResource InputShell}">
+                                <DatePicker Date="{Binding Date}" Format="d MMM yyyy" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout x:Name="NotesField" Grid.Row="1" Grid.Column="1" Spacing="10">
+                            <Label Text="Notes" Style="{StaticResource Overline}" />
+                            <Border Style="{StaticResource InputShell}">
+                                <Entry Text="{Binding Notes}" Placeholder="Optional" MaxLength="500" />
+                            </Border>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorText}" IsVisible="{Binding HasError}" />
+
+                    <!-- Actions -->
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+                        <Button Text="Delete"
+                                Style="{StaticResource DangerButton}"
+                                IsVisible="{Binding IsEditing}"
+                                Command="{Binding DeleteCommand}" />
+                        <Button Grid.Column="2"
+                                Text="Cancel"
+                                Style="{StaticResource GhostButton}"
+                                Command="{Binding CancelCommand}" />
+                        <Button Grid.Column="3"
+                                Text="{Binding SaveLabel}"
+                                Command="{Binding SaveCommand}" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+    </ScrollView>
+
 </ContentPage>

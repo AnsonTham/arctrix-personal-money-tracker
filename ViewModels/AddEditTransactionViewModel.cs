@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Arctrix.PersonalMoneyTracker.Helpers;
@@ -7,9 +8,12 @@ using Arctrix.PersonalMoneyTracker.Services;
 
 namespace Arctrix.PersonalMoneyTracker.ViewModels;
 
-[QueryProperty(nameof(TypeParam), Routes.TransactionTypeParam)]
-[QueryProperty(nameof(IdParam), Routes.TransactionIdParam)]
-public partial class AddEditTransactionViewModel : ViewModelBase
+/// <summary>
+/// Add or edit a transaction. Query parameters: <see cref="Routes.TransactionTypeParam"/>
+/// preselects the type for a new transaction; <see cref="Routes.TransactionIdParam"/> opens
+/// an existing one for editing.
+/// </summary>
+public partial class AddEditTransactionViewModel : ViewModelBase, IQueryAttributable
 {
     private readonly ITransactionService _transactions;
     private readonly IAccountService _accounts;
@@ -18,7 +22,10 @@ public partial class AddEditTransactionViewModel : ViewModelBase
     private readonly ICurrencyService _currency;
 
     private TransactionRecord? _editing;
+    private int? _editId;
+    private bool _loaded;
     private string _baseCurrency = "MYR";
+    private List<Category> _allCategories = new();
 
     public AddEditTransactionViewModel(
         ITransactionService transactions,
@@ -32,89 +39,134 @@ public partial class AddEditTransactionViewModel : ViewModelBase
         _categories = categories;
         _settings = settings;
         _currency = currency;
+        Title = "Add transaction";
+
+        TypeOptions = Enum.GetValues<TransactionType>()
+            .Select(t => new FilterOption(t.ToString(), t))
+            .ToList();
+        SyncTypeOptions();
     }
 
-    // Navigation query params (string, since Shell passes strings)
-    public string? TypeParam
-    {
-        set
-        {
-            if (Enum.TryParse<TransactionType>(value, out var parsed))
-                SelectedType = parsed;
-        }
-    }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowToAccount))]
+    [NotifyPropertyChangedFor(nameof(AccountLabel))]
+    public partial TransactionType SelectedType { get; set; } = TransactionType.Expense;
 
-    public string? IdParam
-    {
-        set
-        {
-            if (int.TryParse(value, out var id) && id > 0)
-                _ = LoadForEditAsync(id);
-        }
-    }
-
-    [ObservableProperty] public partial TransactionType SelectedType { get; set; } = TransactionType.Expense;
-    [ObservableProperty] public partial decimal Amount { get; set; }
+    [ObservableProperty] public partial string AmountText { get; set; } = string.Empty;
     [ObservableProperty] public partial string CurrencyCode { get; set; } = "MYR";
     [ObservableProperty] public partial DateTime Date { get; set; } = DateTime.Now;
     [ObservableProperty] public partial string Notes { get; set; } = string.Empty;
     [ObservableProperty] public partial Account? SelectedAccount { get; set; }
     [ObservableProperty] public partial Account? SelectedToAccount { get; set; }
     [ObservableProperty] public partial Category? SelectedCategory { get; set; }
-    [ObservableProperty] public partial string ErrorMessage { get; set; } = string.Empty;
-    [ObservableProperty] public partial bool IsEditing { get; set; }
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasError))]
+    public partial string ErrorMessage { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SaveLabel))]
+    public partial bool IsEditing { get; set; }
+
+    public IReadOnlyList<FilterOption> TypeOptions { get; }
+    public ObservableCollection<CategoryOption> CategoryOptions { get; } = new();
     public ObservableCollection<Account> Accounts { get; } = new();
-    public ObservableCollection<Category> Categories { get; } = new();
-    public TransactionType[] TransactionTypes { get; } = Enum.GetValues<TransactionType>();
     public IReadOnlyList<string> SupportedCurrencies => _currency.SupportedCurrencies;
 
     public bool ShowToAccount => SelectedType is TransactionType.Transfer or TransactionType.Investment;
+    public string AccountLabel => ShowToAccount ? "From account" : "Account";
+    public bool HasError => ErrorMessage.Length > 0;
+    public string SaveLabel => IsEditing ? "Save changes" : "Save transaction";
 
-    partial void OnSelectedTypeChanged(TransactionType value) => OnPropertyChanged(nameof(ShowToAccount));
+    partial void OnSelectedTypeChanged(TransactionType value)
+    {
+        SyncTypeOptions();
+        RefreshCategories();
+    }
+
+    /// <summary>Shell delivers query parameters before the page appears, so LoadAsync sees them.</summary>
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (query.TryGetValue(Routes.TransactionTypeParam, out var type)
+            && Enum.TryParse<TransactionType>(type?.ToString(), out var parsedType))
+        {
+            SelectedType = parsedType;
+        }
+
+        if (query.TryGetValue(Routes.TransactionIdParam, out var id)
+            && int.TryParse(id?.ToString(), out var parsedId)
+            && parsedId > 0)
+        {
+            _editId = parsedId;
+        }
+    }
 
     [RelayCommand]
     public async Task LoadAsync()
     {
+        if (_loaded)
+            return;
+        _loaded = true;
+
         var settings = await _settings.GetAsync();
         _baseCurrency = settings.BaseCurrency;
-        CurrencyCode = _baseCurrency;
 
-        var accounts = await _accounts.GetAllAsync();
         Accounts.Clear();
-        foreach (var a in accounts) Accounts.Add(a);
-        SelectedAccount ??= Accounts.FirstOrDefault();
+        foreach (var a in await _accounts.GetAllAsync()) Accounts.Add(a);
+        _allCategories = await _categories.GetAllAsync();
 
-        var categories = await _categories.GetAllAsync();
-        Categories.Clear();
-        foreach (var c in categories.Where(c => c.DefaultType == SelectedType || !c.IsSystem)) Categories.Add(c);
-        SelectedCategory ??= Categories.FirstOrDefault();
+        if (_editId is int id && await _transactions.GetByIdAsync(id) is TransactionRecord existing)
+        {
+            _editing = existing;
+            IsEditing = true;
+            Title = "Edit transaction";
+            AmountText = existing.OriginalAmount.ToString("0.##", CultureInfo.CurrentCulture);
+            CurrencyCode = existing.OriginalCurrency;
+            Date = existing.Date;
+            Notes = existing.Notes;
+            SelectedAccount = Accounts.FirstOrDefault(a => a.Id == existing.AccountId);
+            SelectedToAccount = Accounts.FirstOrDefault(a => a.Id == existing.ToAccountId);
+
+            // An older transaction may point at a category that has since been archived.
+            if (_allCategories.All(c => c.Id != existing.CategoryId)
+                && await _categories.GetByIdAsync(existing.CategoryId) is Category archived)
+            {
+                _allCategories.Add(archived);
+            }
+
+            SelectedCategory = _allCategories.FirstOrDefault(c => c.Id == existing.CategoryId);
+            SelectedType = existing.Type;
+        }
+        else
+        {
+            CurrencyCode = _baseCurrency;
+            SelectedAccount = Accounts.FirstOrDefault();
+        }
+
+        RefreshCategories();
     }
 
-    private async Task LoadForEditAsync(int id)
+    [RelayCommand]
+    private void SelectType(FilterOption option)
     {
-        _editing = await _transactions.GetByIdAsync(id);
-        if (_editing is null) return;
+        if (option.Type is TransactionType type)
+            SelectedType = type;
+    }
 
-        IsEditing = true;
-        Title = "Edit Transaction";
-        SelectedType = _editing.Type;
-        Amount = _editing.OriginalAmount;
-        CurrencyCode = _editing.OriginalCurrency;
-        Date = _editing.Date;
-        Notes = _editing.Notes;
-
-        await LoadAsync();
-        SelectedAccount = Accounts.FirstOrDefault(a => a.Id == _editing.AccountId);
-        SelectedToAccount = Accounts.FirstOrDefault(a => a.Id == _editing.ToAccountId);
-        SelectedCategory = Categories.FirstOrDefault(c => c.Id == _editing.CategoryId) ??
-                           (await _categories.GetByIdAsync(_editing.CategoryId));
+    [RelayCommand]
+    private void SelectCategory(CategoryOption option)
+    {
+        SelectedCategory = option.Category;
+        foreach (var o in CategoryOptions)
+            o.IsSelected = ReferenceEquals(o, option);
     }
 
     [RelayCommand]
     private async Task Save()
     {
-        if (Amount <= 0)
+        ErrorMessage = string.Empty;
+
+        if (!decimal.TryParse(AmountText, NumberStyles.Number, CultureInfo.CurrentCulture, out var amount) || amount <= 0)
         {
             ErrorMessage = "Enter an amount greater than zero.";
             return;
@@ -147,14 +199,16 @@ public partial class AddEditTransactionViewModel : ViewModelBase
             Id = _editing?.Id ?? 0,
             Type = SelectedType,
             AccountId = SelectedAccount.Id,
-            ToAccountId = ShowToAccount ? SelectedToAccount!.Id : null,
+            ToAccountId = ShowToAccount ? SelectedToAccount?.Id : null,
             CategoryId = SelectedCategory.Id,
-            OriginalAmount = Amount,
+            OriginalAmount = amount,
             OriginalCurrency = CurrencyCode,
             ExchangeRate = rate,
-            BaseAmount = Amount * rate,
+            BaseAmount = amount * rate,
             Date = Date,
             Notes = Notes.Trim(),
+            // Preserve the link to the recurring payment that generated this row, if any.
+            RecurringPaymentId = _editing?.RecurringPaymentId,
             CreatedAt = _editing?.CreatedAt ?? DateTime.Now
         };
 
@@ -169,13 +223,49 @@ public partial class AddEditTransactionViewModel : ViewModelBase
     [RelayCommand]
     private async Task Delete()
     {
-        if (_editing is not null)
-        {
-            await _transactions.DeleteAsync(_editing);
-        }
+        if (_editing is null)
+            return;
+
+        var confirmed = await Shell.Current.DisplayAlertAsync(
+            "Delete this transaction?",
+            "Its effect on your account balances will be reversed. This can't be undone.",
+            "Delete",
+            "Keep");
+        if (!confirmed)
+            return;
+
+        await _transactions.DeleteAsync(_editing);
         await Shell.Current.GoToAsync("..");
     }
 
     [RelayCommand]
     private Task Cancel() => Shell.Current.GoToAsync("..");
+
+    private void SyncTypeOptions()
+    {
+        foreach (var option in TypeOptions)
+            option.IsSelected = option.Type == SelectedType;
+    }
+
+    /// <summary>Shows the categories meant for the selected type plus any user-created ones.</summary>
+    private void RefreshCategories()
+    {
+        var visible = _allCategories
+            .Where(c => c.DefaultType == SelectedType || !c.IsSystem)
+            .ToList();
+
+        if (SelectedCategory is Category selected && visible.All(c => c.Id != selected.Id))
+        {
+            // Keep the category an edited transaction already has, even if it's filed under another type.
+            if (_editing?.CategoryId == selected.Id)
+                visible.Add(selected);
+            else
+                SelectedCategory = null;
+        }
+        SelectedCategory ??= visible.FirstOrDefault();
+
+        CategoryOptions.Clear();
+        foreach (var category in visible)
+            CategoryOptions.Add(new CategoryOption(category) { IsSelected = category.Id == SelectedCategory?.Id });
+    }
 }
