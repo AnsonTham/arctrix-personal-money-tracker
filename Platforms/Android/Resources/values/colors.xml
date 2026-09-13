@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Keep in sync with Resources/Styles/Colors.xaml (Surface, Bg, Accent). -->
+    <color name="colorPrimary">#10141A</color>
+    <color name="colorPrimaryDark">#080A0E</color>
+    <color name="colorAccent">#E6B450</color>
+</resources>

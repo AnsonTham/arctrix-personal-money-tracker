@@ -1,0 +1,57 @@
+<maui:MauiWinUIApplication
+    x:Class="Arctrix.PersonalMoneyTracker.WinUI.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:maui="using:Microsoft.Maui"
+    RequestedTheme="Dark">
+
+    <Application.Resources>
+        <ResourceDictionary>
+
+            <!-- Brand accent (champagne gold) for native focus rings, toggles and calendar selection. -->
+            <Color x:Key="SystemAccentColor">#FFE6B450</Color>
+            <Color x:Key="SystemAccentColorLight1">#FFEDC574</Color>
+            <Color x:Key="SystemAccentColorLight2">#FFF2D596</Color>
+            <Color x:Key="SystemAccentColorLight3">#FFF7E4B8</Color>
+            <Color x:Key="SystemAccentColorDark1">#FFC99A3E</Color>
+            <Color x:Key="SystemAccentColorDark2">#FFA87F30</Color>
+            <Color x:Key="SystemAccentColorDark3">#FF866424</Color>
+
+            <!-- Inputs sit inside design-system InputShell borders (Resources/Styles/Styles.xaml),
+                 so WinUI's own borders, fills and focus underline are removed. -->
+            <Thickness x:Key="TextControlBorderThemeThickness">0</Thickness>
+            <Thickness x:Key="TextControlBorderThemeThicknessFocused">0</Thickness>
+            <SolidColorBrush x:Key="TextControlBackground" Color="Transparent" />
+            <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent" />
+            <SolidColorBrush x:Key="TextControlBackgroundDisabled" Color="Transparent" />
+            <SolidColorBrush x:Key="TextControlBorderBrush" Color="Transparent" />
+            <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="Transparent" />
+
+            <Thickness x:Key="ComboBoxBorderThemeThickness">0</Thickness>
+            <SolidColorBrush x:Key="ComboBoxBackground" Color="Transparent" />
+            <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="Transparent" />
+            <SolidColorBrush x:Key="ComboBoxBackgroundFocused" Color="Transparent" />
+            <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="Transparent" />
+            <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="ComboBoxBorderBrushPressed" Color="Transparent" />
+            <SolidColorBrush x:Key="ComboBoxBorderBrushFocused" Color="Transparent" />
+            <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FF171C23" />
+            <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#FF252C35" />
+            <SolidColorBrush x:Key="ComboBoxItemPillFillBrush" Color="#FFE6B450" />
+
+            <Thickness x:Key="CalendarDatePickerBorderThemeThickness">0</Thickness>
+            <SolidColorBrush x:Key="CalendarDatePickerBackground" Color="Transparent" />
+            <SolidColorBrush x:Key="CalendarDatePickerBackgroundPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="CalendarDatePickerBackgroundPressed" Color="Transparent" />
+            <SolidColorBrush x:Key="CalendarDatePickerBackgroundFocused" Color="Transparent" />
+            <SolidColorBrush x:Key="CalendarDatePickerBorderBrush" Color="Transparent" />
+            <SolidColorBrush x:Key="CalendarDatePickerBorderBrushPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="CalendarDatePickerBorderBrushPressed" Color="Transparent" />
+
+        </ResourceDictionary>
+    </Application.Resources>
+
+</maui:MauiWinUIApplication>

@@ -1,0 +1,14 @@
+# Build output
+bin/
+obj/
+
+# IDE state
+.vs/
+.idea/
+*.user
+*.suo
+
+# Local databases created while debugging
+*.db3
+*.db3-shm
+*.db3-wal
