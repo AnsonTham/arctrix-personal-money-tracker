@@ -53,6 +53,7 @@ public static class MauiProgram
         builder.Services.AddTransient<AddRecurringViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<ReportsViewModel>();
+        builder.Services.AddTransient<MoreViewModel>();
 
         // Pages
         builder.Services.AddTransient<DashboardPage>();
@@ -65,6 +66,7 @@ public static class MauiProgram
         builder.Services.AddTransient<AddRecurringPage>();
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddTransient<ReportsPage>();
+        builder.Services.AddTransient<MorePage>();
 
         return builder.Build();
     }

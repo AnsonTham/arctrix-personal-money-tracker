@@ -11,5 +11,17 @@ public partial class App : Application
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
-        => new(new AppShell()) { Title = "Arctrix Personal Money Tracker" };
+    {
+        var window = new Window(new AppShell()) { Title = "Arctrix Personal Money Tracker" };
+
+        if (DeviceInfo.Current.Idiom == DeviceIdiom.Desktop)
+        {
+            window.Width = 1360;
+            window.Height = 880;
+            window.MinimumWidth = 380;
+            window.MinimumHeight = 640;
+        }
+
+        return window;
+    }
 }

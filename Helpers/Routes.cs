@@ -13,6 +13,11 @@ public static class Routes
 
     public const string AddTransaction = "addtransaction";
     public const string AddAccount = "addaccount";
+    public const string AddRecurring = "addrecurring";
+
+    // Phone tab bar only: "More" hub, and the "Add" tab that opens AddTransaction instead of navigating.
+    public const string More = "more";
+    public const string QuickAdd = "quickadd";
 
     public const string TransactionTypeParam = "type";
     public const string TransactionIdParam = "id";

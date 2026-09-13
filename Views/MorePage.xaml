@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Arctrix.PersonalMoneyTracker.ViewModels"
+             xmlns:helpers="clr-namespace:Arctrix.PersonalMoneyTracker.Helpers"
+             x:Class="Arctrix.PersonalMoneyTracker.Views.MorePage"
+             x:DataType="vm:MoreViewModel"
+             Title="{Binding Title}"
+             Shell.NavBarIsVisible="False">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="{StaticResource PagePaddingPhone}" Spacing="{StaticResource GapL}">
+
+            <Label Text="{Binding Title}" Style="{StaticResource H1}" Margin="4,16,0,4" />
+
+            <Border Style="{StaticResource Card}" Padding="6">
+                <VerticalStackLayout>
+
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" Padding="12">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding GoToCommand}" CommandParameter="{x:Static helpers:Routes.Accounts}" />
+                        </Grid.GestureRecognizers>
+                        <Border Style="{StaticResource IconTile}">
+                            <Image Source="icon_accounts.png" WidthRequest="20" HeightRequest="20" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                            <Label Text="Accounts" Style="{StaticResource BodyStrong}" />
+                            <Label Text="Bank, cash, e-wallet and investment balances" Style="{StaticResource Caption}" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="2" Text="›" FontSize="22" TextColor="{StaticResource TextFaint}" VerticalOptions="Center" />
+                    </Grid>
+
+                    <BoxView Style="{StaticResource Divider}" Margin="66,0,12,0" />
+
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" Padding="12">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding GoToCommand}" CommandParameter="{x:Static helpers:Routes.Recurring}" />
+                        </Grid.GestureRecognizers>
+                        <Border Style="{StaticResource IconTile}">
+                            <Image Source="icon_recurring.png" WidthRequest="20" HeightRequest="20" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                            <Label Text="Recurring" Style="{StaticResource BodyStrong}" />
+                            <Label Text="Subscriptions, bills and salary" Style="{StaticResource Caption}" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="2" Text="›" FontSize="22" TextColor="{StaticResource TextFaint}" VerticalOptions="Center" />
+                    </Grid>
+
+                    <BoxView Style="{StaticResource Divider}" Margin="66,0,12,0" />
+
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" Padding="12">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding GoToCommand}" CommandParameter="{x:Static helpers:Routes.Reports}" />
+                        </Grid.GestureRecognizers>
+                        <Border Style="{StaticResource IconTile}">
+                            <Image Source="icon_reports.png" WidthRequest="20" HeightRequest="20" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                            <Label Text="Reports" Style="{StaticResource BodyStrong}" />
+                            <Label Text="Monthly PDF summaries" Style="{StaticResource Caption}" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="2" Text="›" FontSize="22" TextColor="{StaticResource TextFaint}" VerticalOptions="Center" />
+                    </Grid>
+
+                    <BoxView Style="{StaticResource Divider}" Margin="66,0,12,0" />
+
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" Padding="12">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding GoToCommand}" CommandParameter="{x:Static helpers:Routes.Settings}" />
+                        </Grid.GestureRecognizers>
+                        <Border Style="{StaticResource IconTile}">
+                            <Image Source="icon_settings.png" WidthRequest="20" HeightRequest="20" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                            <Label Text="Settings" Style="{StaticResource BodyStrong}" />
+                            <Label Text="Base currency and preferences" Style="{StaticResource Caption}" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="2" Text="›" FontSize="22" TextColor="{StaticResource TextFaint}" VerticalOptions="Center" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
