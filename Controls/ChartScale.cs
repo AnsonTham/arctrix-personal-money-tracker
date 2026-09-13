@@ -25,7 +25,7 @@ internal static class ChartScale
         var abs = Math.Abs(value);
         return abs >= 1_000_000 ? (value / 1_000_000).ToString("0.#", CultureInfo.CurrentCulture) + "M"
             : abs >= 1_000 ? (value / 1_000).ToString("0.#", CultureInfo.CurrentCulture) + "K"
-            : value.ToString("0", CultureInfo.CurrentCulture);
+            : value.ToString("0.#", CultureInfo.CurrentCulture);
     }
 
     private static double NiceStep(double rough)

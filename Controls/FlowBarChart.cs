@@ -134,7 +134,8 @@ public class FlowBarChart : GraphicsView, IDrawable
 
         var plot = _plot;
         var largest = (double)flows.Max(f => Math.Max(f.Income, f.Expense));
-        var (_, axisMax, step) = ChartScale.Nice(0, Math.Max(largest, 1));
+        // A month range with no activity still gets a readable 0–100 money axis.
+        var (_, axisMax, step) = ChartScale.Nice(0, Math.Max(largest, 100));
         var slot = plot.Width / flows.Count;
         var barWidth = Math.Min(MaxBarWidth, (slot * 0.56f - PairGap) / 2);
         float Y(double v) => (float)(plot.Bottom - v / axisMax * plot.Height);
