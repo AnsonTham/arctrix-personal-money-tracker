@@ -21,8 +21,8 @@ public interface ITransactionService
 
     Task<decimal> GetMonthlyTotalAsync(TransactionType type, int year, int month);
 
-    /// <summary>Per-month income, expense and net change for the last <paramref name="monthCount"/> months (current month included), oldest first.</summary>
-    Task<IReadOnlyList<MonthlyFlow>> GetMonthlyFlowsAsync(int monthCount);
+    /// <summary>Per-month income, expense and net change for the <paramref name="monthCount"/> months ending with <paramref name="endMonth"/>'s month, oldest first.</summary>
+    Task<IReadOnlyList<MonthlyFlow>> GetMonthlyFlowsAsync(DateTime endMonth, int monthCount);
 
     /// <summary>Expense totals grouped by category for one month, largest first.</summary>
     Task<IReadOnlyList<CategorySpend>> GetCategorySpendAsync(int year, int month);
@@ -95,12 +95,14 @@ public class TransactionService : ITransactionService
         return monthly.Where(t => t.Type == type).Sum(t => t.BaseAmount);
     }
 
-    public async Task<IReadOnlyList<MonthlyFlow>> GetMonthlyFlowsAsync(int monthCount)
+    public async Task<IReadOnlyList<MonthlyFlow>> GetMonthlyFlowsAsync(DateTime endMonth, int monthCount)
     {
         await _db.InitializeAsync();
-        var firstMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(1 - monthCount);
+        var lastMonth = new DateTime(endMonth.Year, endMonth.Month, 1);
+        var firstMonth = lastMonth.AddMonths(1 - monthCount);
+        var afterLastMonth = lastMonth.AddMonths(1);
         var inRange = await _db.Connection.Table<TransactionRecord>()
-            .Where(t => t.Date >= firstMonth)
+            .Where(t => t.Date >= firstMonth && t.Date < afterLastMonth)
             .ToListAsync();
 
         return Enumerable.Range(0, monthCount)

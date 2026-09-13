@@ -2,8 +2,257 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Arctrix.PersonalMoneyTracker.ViewModels"
+             xmlns:models="clr-namespace:Arctrix.PersonalMoneyTracker.Models"
+             xmlns:controls="clr-namespace:Arctrix.PersonalMoneyTracker.Controls"
              x:Class="Arctrix.PersonalMoneyTracker.Views.AnalyticsPage"
              x:DataType="vm:AnalyticsViewModel"
              Title="{Binding Title}">
-    <Label Text="{Binding Title}" Margin="24" />
+
+    <ScrollView>
+        <Grid x:Name="LayoutRoot"
+              HorizontalOptions="Center"
+              Padding="{StaticResource PagePaddingDesktop}"
+              ColumnDefinitions="3*,2*"
+              RowDefinitions="Auto,Auto,Auto,Auto"
+              ColumnSpacing="24"
+              RowSpacing="24">
+
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="LayoutStates">
+                    <VisualState x:Name="Wide" />
+                    <VisualState x:Name="Narrow">
+                        <VisualState.Setters>
+                            <Setter Property="Padding" Value="{StaticResource PagePaddingPhone}" />
+                            <Setter Property="ColumnDefinitions" Value="*" />
+                            <Setter Property="RowDefinitions" Value="Auto,Auto,Auto,Auto,Auto" />
+                            <Setter Property="ColumnSpacing" Value="0" />
+                            <Setter Property="RowSpacing" Value="16" />
+
+                            <Setter TargetName="Header" Property="Margin" Value="4,16,4,0" />
+                            <Setter TargetName="Header" Property="Grid.ColumnDefinitions" Value="*" />
+                            <Setter TargetName="MonthSwitcher" Property="Grid.Row" Value="1" />
+                            <Setter TargetName="MonthSwitcher" Property="Grid.Column" Value="0" />
+                            <Setter TargetName="MonthSwitcher" Property="HorizontalOptions" Value="Start" />
+                            <Setter TargetName="MonthSwitcher" Property="Margin" Value="0,12,0,0" />
+
+                            <Setter TargetName="KpiGrid" Property="Grid.ColumnDefinitions" Value="*,*" />
+                            <Setter TargetName="KpiGrid" Property="Grid.RowDefinitions" Value="Auto,Auto" />
+                            <Setter TargetName="KpiSaved" Property="Grid.Row" Value="1" />
+                            <Setter TargetName="KpiSaved" Property="Grid.Column" Value="0" />
+                            <Setter TargetName="KpiRate" Property="Grid.Row" Value="1" />
+                            <Setter TargetName="KpiRate" Property="Grid.Column" Value="1" />
+
+                            <Setter TargetName="FlowChart" Property="HeightRequest" Value="200" />
+                            <Setter TargetName="SpendingCard" Property="Grid.Row" Value="3" />
+                            <Setter TargetName="SpendingCard" Property="Grid.Column" Value="0" />
+                            <Setter TargetName="TableCard" Property="Grid.Row" Value="4" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+
+            <!-- Header with the month filter that scopes everything below -->
+            <Grid x:Name="Header" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                <VerticalStackLayout Spacing="4" VerticalOptions="Center">
+                    <Label Text="{Binding Title}" Style="{StaticResource H1}" />
+                    <Label Text="Income, spending and savings by month" Style="{StaticResource Body}" />
+                </VerticalStackLayout>
+
+                <Border x:Name="MonthSwitcher"
+                        Grid.Column="1"
+                        Background="{StaticResource SurfaceBrush}"
+                        Stroke="{StaticResource LineBrush}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 14"
+                        Padding="4"
+                        VerticalOptions="Center">
+                    <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="4">
+                        <Button Text="‹"
+                                Style="{StaticResource GhostButton}"
+                                FontSize="20"
+                                Padding="14,0"
+                                MinimumHeightRequest="38"
+                                SemanticProperties.Description="Previous month"
+                                Command="{Binding PreviousMonthCommand}" />
+                        <Label Grid.Column="1"
+                               Text="{Binding MonthLabel}"
+                               Style="{StaticResource BodyStrong}"
+                               MinimumWidthRequest="130"
+                               HorizontalTextAlignment="Center"
+                               VerticalOptions="Center" />
+                        <Button Grid.Column="2"
+                                Text="›"
+                                Style="{StaticResource GhostButton}"
+                                FontSize="20"
+                                Padding="14,0"
+                                MinimumHeightRequest="38"
+                                SemanticProperties.Description="Next month"
+                                Command="{Binding NextMonthCommand}" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- KPI row -->
+            <Grid x:Name="KpiGrid"
+                  Grid.Row="1"
+                  Grid.ColumnSpan="2"
+                  ColumnDefinitions="*,*,*,*"
+                  ColumnSpacing="16"
+                  RowSpacing="16">
+
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="10">
+                        <HorizontalStackLayout Spacing="8">
+                            <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource Positive}" VerticalOptions="Center" />
+                            <Label Text="Income" Style="{StaticResource Caption}" />
+                        </HorizontalStackLayout>
+                        <Label Text="{Binding TotalIncome, StringFormat='{0:N2}'}" Style="{StaticResource AmountLarge}" />
+                        <Label Text="{Binding BaseCurrency}" Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Grid.Column="1" Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="10">
+                        <HorizontalStackLayout Spacing="8">
+                            <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource Negative}" VerticalOptions="Center" />
+                            <Label Text="Spent" Style="{StaticResource Caption}" />
+                        </HorizontalStackLayout>
+                        <Label Text="{Binding TotalExpense, StringFormat='{0:N2}'}" Style="{StaticResource AmountLarge}" />
+                        <Label Text="{Binding BaseCurrency}" Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border x:Name="KpiSaved" Grid.Column="2" Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="{Binding SavedCaption}" Style="{StaticResource Caption}" />
+                        <Label Text="{Binding NetAmount, StringFormat='{0:N2}'}" Style="{StaticResource AmountLarge}" />
+                        <Label Text="{Binding BaseCurrency}" Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border x:Name="KpiRate" Grid.Column="3" Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Savings rate" Style="{StaticResource Caption}" />
+                        <Label Text="{Binding SavingsRateLabel}" Style="{StaticResource AmountLarge}" />
+                        <Label Text="of income kept" Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+
+            <!-- Income vs spending -->
+            <Border x:Name="FlowCard" Grid.Row="2" Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="16">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="Income vs spending" Style="{StaticResource H2}" />
+                            <Label Style="{StaticResource Caption}">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="6 months to " />
+                                        <Span Text="{Binding MonthLabel}" />
+                                        <Span Text=" · " />
+                                        <Span Text="{Binding BaseCurrency}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                        </VerticalStackLayout>
+
+                        <!-- Legend: rect keys mirror the column marks -->
+                        <HorizontalStackLayout Grid.Column="1" Spacing="14" VerticalOptions="Start">
+                            <HorizontalStackLayout Spacing="6">
+                                <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="2" Color="{StaticResource Positive}" VerticalOptions="Center" />
+                                <Label Text="Income" Style="{StaticResource Caption}" TextColor="{StaticResource TextSecondary}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout Spacing="6">
+                                <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="2" Color="{StaticResource Negative}" VerticalOptions="Center" />
+                                <Label Text="Spent" Style="{StaticResource Caption}" TextColor="{StaticResource TextSecondary}" />
+                            </HorizontalStackLayout>
+                        </HorizontalStackLayout>
+                    </Grid>
+
+                    <controls:FlowBarChart x:Name="FlowChart"
+                                           HeightRequest="260"
+                                           Flows="{Binding Flows}"
+                                           ValuePrefix="{Binding BaseCurrency, StringFormat='{0} '}"
+                                           IncomeColor="{StaticResource Positive}"
+                                           ExpenseColor="{StaticResource Negative}"
+                                           GridColor="{StaticResource Line}"
+                                           LabelColor="{StaticResource Muted}"
+                                           ValueColor="{StaticResource TextPrimary}"
+                                           TooltipColor="{StaticResource Surface2}"
+                                           HoverColor="{StaticResource Surface2}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Spending by category -->
+            <Border x:Name="SpendingCard" Grid.Row="2" Grid.Column="1" Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="16">
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="Spending by category" Style="{StaticResource H2}" />
+                        <Label Text="{Binding MonthLabel}" Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="14" BindableLayout.ItemsSource="{Binding SpendByCategory}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:CategorySpend">
+                                <VerticalStackLayout Spacing="7">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                        <Label Text="{Binding Icon}" FontSize="14" VerticalOptions="Center" />
+                                        <Label Grid.Column="1" Text="{Binding Name}" Style="{StaticResource BodyStrong}" VerticalOptions="Center" />
+                                        <Label Grid.Column="2" VerticalOptions="Center">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding Amount, StringFormat='{0:N2}'}" FontFamily="InterSemiBold" TextColor="{StaticResource TextPrimary}" />
+                                                    <Span Text="   " />
+                                                    <Span Text="{Binding PercentOfTotal, StringFormat='{0:0}%'}" FontSize="12" TextColor="{StaticResource Muted}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </Grid>
+                                    <controls:ProportionBar Value="{Binding Share}"
+                                                            BarColor="{StaticResource Accent}"
+                                                            TrackColor="{StaticResource Surface3}" />
+                                </VerticalStackLayout>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
+                    <Label Text="No spending recorded for this month."
+                           Style="{StaticResource Body}"
+                           IsVisible="{Binding ShowSpendingEmptyState}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Table view of the chart -->
+            <Border x:Name="TableCard" Grid.Row="3" Grid.ColumnSpan="2" Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Monthly breakdown" Style="{StaticResource H2}" Margin="0,0,0,6" />
+
+                    <Grid ColumnDefinitions="2*,*,*,*" ColumnSpacing="12">
+                        <Label Text="Month" Style="{StaticResource Overline}" />
+                        <Label Grid.Column="1" Text="Income" Style="{StaticResource Overline}" HorizontalTextAlignment="End" />
+                        <Label Grid.Column="2" Text="Spent" Style="{StaticResource Overline}" HorizontalTextAlignment="End" />
+                        <Label Grid.Column="3" Text="Saved" Style="{StaticResource Overline}" HorizontalTextAlignment="End" />
+                    </Grid>
+
+                    <BoxView Style="{StaticResource Divider}" />
+
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Flows}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:MonthlyFlow">
+                                <Grid ColumnDefinitions="2*,*,*,*" ColumnSpacing="12" Padding="0,9">
+                                    <Label Text="{Binding MonthStart, StringFormat='{0:MMM yyyy}'}" Style="{StaticResource BodyStrong}" />
+                                    <Label Grid.Column="1" Text="{Binding Income, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" FontFamily="InterRegular" />
+                                    <Label Grid.Column="2" Text="{Binding Expense, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" FontFamily="InterRegular" />
+                                    <Label Grid.Column="3" Text="{Binding Saved, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+        </Grid>
+    </ScrollView>
+
 </ContentPage>

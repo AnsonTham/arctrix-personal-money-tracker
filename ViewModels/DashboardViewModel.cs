@@ -87,7 +87,7 @@ public partial class DashboardViewModel : ViewModelBase
             InvestmentBalance = accounts.Where(a => a.Type == AccountType.Investment).Sum(a => a.Balance);
             NetWorth = accounts.Sum(a => a.Balance);
 
-            var flows = await _transactions.GetMonthlyFlowsAsync(TrendMonths);
+            var flows = await _transactions.GetMonthlyFlowsAsync(now, TrendMonths);
             var thisMonth = flows[^1];
             MonthlyIncome = thisMonth.Income;
             MonthlyExpense = thisMonth.Expense;

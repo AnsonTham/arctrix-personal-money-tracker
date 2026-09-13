@@ -6,6 +6,11 @@ namespace Arctrix.PersonalMoneyTracker.Models;
 public record MonthlyFlow(int Year, int Month, decimal Income, decimal Expense, decimal NetChange)
 {
     public DateTime MonthStart => new(Year, Month, 1);
+
+    /// <summary>Income minus expenses; negative when the month overspent.</summary>
+    public decimal Saved => Income - Expense;
+
+    public bool IsDeficit => Saved < 0;
 }
 
 /// <summary>Expense total for one category within a period, in base currency.</summary>

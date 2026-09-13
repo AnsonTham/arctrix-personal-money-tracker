@@ -121,7 +121,7 @@ public class TrendChart : GraphicsView, IDrawable
         if (points is null || points.Count == 0 || _plot.Width <= 0 || _plot.Height <= 0)
             return;
 
-        var (axisMin, axisMax, step) = NiceScale(points.Min(p => p.Value), points.Max(p => p.Value));
+        var (axisMin, axisMax, step) = ChartScale.Nice(points.Min(p => p.Value), points.Max(p => p.Value));
         var plot = _plot;
         float X(int i) => points.Count == 1 ? plot.Center.X : plot.Left + i * plot.Width / (points.Count - 1);
         float Y(double v) => (float)(plot.Bottom - (v - axisMin) / (axisMax - axisMin) * plot.Height);
@@ -137,7 +137,7 @@ public class TrendChart : GraphicsView, IDrawable
         {
             var y = Y(v);
             canvas.DrawLine(plot.Left, y, plot.Right, y);
-            canvas.DrawString(Compact(v), dirtyRect.Left, y - 8, LeftBand - 10, 16, HorizontalAlignment.Right, VerticalAlignment.Center);
+            canvas.DrawString(ChartScale.Compact(v), dirtyRect.Left, y - 8, LeftBand - 10, 16, HorizontalAlignment.Right, VerticalAlignment.Center);
         }
 
         for (var i = 0; i < points.Count; i++)
@@ -244,33 +244,4 @@ public class TrendChart : GraphicsView, IDrawable
 
     private static void Redraw(BindableObject bindable, object oldValue, object newValue)
         => ((TrendChart)bindable).Invalidate();
-
-    private static (double Min, double Max, double Step) NiceScale(double min, double max)
-    {
-        if (max - min < 1e-9)
-        {
-            var pad = Math.Max(Math.Abs(max) * 0.1, 1);
-            min -= pad;
-            max += pad;
-        }
-
-        var step = NiceStep((max - min) / 3);
-        return (Math.Floor(min / step) * step, Math.Ceiling(max / step) * step, step);
-    }
-
-    private static double NiceStep(double rough)
-    {
-        var magnitude = Math.Pow(10, Math.Floor(Math.Log10(rough)));
-        var fraction = rough / magnitude;
-        var nice = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
-        return nice * magnitude;
-    }
-
-    private static string Compact(double value)
-    {
-        var abs = Math.Abs(value);
-        return abs >= 1_000_000 ? (value / 1_000_000).ToString("0.#", CultureInfo.CurrentCulture) + "M"
-            : abs >= 1_000 ? (value / 1_000).ToString("0.#", CultureInfo.CurrentCulture) + "K"
-            : value.ToString("0", CultureInfo.CurrentCulture);
-    }
 }
