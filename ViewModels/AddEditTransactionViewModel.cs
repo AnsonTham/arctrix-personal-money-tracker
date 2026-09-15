@@ -213,10 +213,19 @@ public partial class AddEditTransactionViewModel : ViewModelBase, IQueryAttribut
             CreatedAt = _editing?.CreatedAt ?? DateTime.Now
         };
 
-        if (_editing is null)
-            await _transactions.AddAsync(record);
-        else
-            await _transactions.UpdateAsync(_editing, record);
+        try
+        {
+            if (_editing is null)
+                await _transactions.AddAsync(record);
+            else
+                await _transactions.UpdateAsync(_editing, record);
+        }
+        catch (Exception ex)
+        {
+            // The save is atomic, so nothing was written; keep the form open with its values.
+            ErrorMessage = $"Couldn't save this transaction: {ex.Message}";
+            return;
+        }
 
         await Shell.Current.GoToAsync("..");
     }
@@ -235,7 +244,16 @@ public partial class AddEditTransactionViewModel : ViewModelBase, IQueryAttribut
         if (!confirmed)
             return;
 
-        await _transactions.DeleteAsync(_editing);
+        try
+        {
+            await _transactions.DeleteAsync(_editing);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Couldn't delete this transaction: {ex.Message}";
+            return;
+        }
+
         await Shell.Current.GoToAsync("..");
     }
 

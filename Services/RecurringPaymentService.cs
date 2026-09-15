@@ -1,3 +1,4 @@
+using SQLite;
 using Arctrix.PersonalMoneyTracker.Data;
 using Arctrix.PersonalMoneyTracker.Models;
 
@@ -12,7 +13,8 @@ public interface IRecurringPaymentService
     /// <summary>
     /// Posts a TransactionRecord for every occurrence that has come due - including months
     /// missed while the app wasn't opened - and advances NextDueDate past today. Safe to call
-    /// repeatedly and concurrently: runs are serialized, and an occurrence that already has a
+    /// repeatedly and concurrently: runs are serialized, each occurrence is posted and its
+    /// schedule advanced in one database transaction, and an occurrence that already has a
     /// posted transaction is never posted again. Returns the number of transactions posted.
     /// </summary>
     Task<int> RunDuePaymentsAsync();
@@ -21,7 +23,6 @@ public interface IRecurringPaymentService
 public class RecurringPaymentService : IRecurringPaymentService
 {
     private readonly AppDbContext _db;
-    private readonly ITransactionService _transactions;
     private readonly ISettingsService _settings;
     private readonly ICurrencyService _currency;
 
@@ -29,14 +30,9 @@ public class RecurringPaymentService : IRecurringPaymentService
     // appearing twice in quick succession) from both posting the same occurrence.
     private readonly SemaphoreSlim _runLock = new(1, 1);
 
-    public RecurringPaymentService(
-        AppDbContext db,
-        ITransactionService transactions,
-        ISettingsService settings,
-        ICurrencyService currency)
+    public RecurringPaymentService(AppDbContext db, ISettingsService settings, ICurrencyService currency)
     {
         _db = db;
-        _transactions = transactions;
         _settings = settings;
         _currency = currency;
     }
@@ -85,29 +81,33 @@ public class RecurringPaymentService : IRecurringPaymentService
                 {
                     var dueDate = payment.NextDueDate.Date;
 
-                    if (!await IsPostedAsync(payment.Id, dueDate))
+                    // Posting the occurrence and advancing the schedule commit together, so an
+                    // interrupted run neither loses an occurrence nor posts it twice.
+                    await _db.Connection.RunInTransactionAsync(conn =>
                     {
-                        await _transactions.AddAsync(new TransactionRecord
+                        if (!IsPosted(conn, payment.Id, dueDate))
                         {
-                            Type = payment.Type,
-                            AccountId = payment.AccountId,
-                            CategoryId = payment.CategoryId,
-                            OriginalAmount = payment.Amount,
-                            OriginalCurrency = payment.Currency,
-                            ExchangeRate = rate,
-                            BaseAmount = payment.Amount * rate,
-                            BaseCurrencyAtEntry = baseCurrency,
-                            Date = dueDate,
-                            Notes = $"Recurring: {payment.Name}",
-                            RecurringPaymentId = payment.Id
-                        });
-                        posted++;
-                    }
+                            BalanceLedger.Insert(conn, new TransactionRecord
+                            {
+                                Type = payment.Type,
+                                AccountId = payment.AccountId,
+                                CategoryId = payment.CategoryId,
+                                OriginalAmount = payment.Amount,
+                                OriginalCurrency = payment.Currency,
+                                ExchangeRate = rate,
+                                BaseAmount = payment.Amount * rate,
+                                BaseCurrencyAtEntry = baseCurrency,
+                                Date = dueDate,
+                                Notes = $"Recurring: {payment.Name}",
+                                RecurringPaymentId = payment.Id
+                            }, _currency);
+                            posted++;
+                        }
 
-                    // Saved after each occurrence, so an interrupted run resumes where it stopped.
-                    payment.LastRunDate = dueDate;
-                    payment.NextDueDate = SafeAddMonth(dueDate, payment.DayOfMonth);
-                    await _db.Connection.UpdateAsync(payment);
+                        payment.LastRunDate = dueDate;
+                        payment.NextDueDate = SafeAddMonth(dueDate, payment.DayOfMonth);
+                        conn.Update(payment);
+                    });
                 }
             }
 
@@ -119,13 +119,12 @@ public class RecurringPaymentService : IRecurringPaymentService
         }
     }
 
-    private async Task<bool> IsPostedAsync(int paymentId, DateTime dueDate)
+    private static bool IsPosted(SQLiteConnection conn, int paymentId, DateTime dueDate)
     {
         var nextDay = dueDate.AddDays(1);
-        var count = await _db.Connection.Table<TransactionRecord>()
+        return conn.Table<TransactionRecord>()
             .Where(t => t.RecurringPaymentId == paymentId && t.Date >= dueDate && t.Date < nextDay)
-            .CountAsync();
-        return count > 0;
+            .Count() > 0;
     }
 
     private static DateTime SafeAddMonth(DateTime from, int dayOfMonth)

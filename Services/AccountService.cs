@@ -3,13 +3,16 @@ using Arctrix.PersonalMoneyTracker.Models;
 
 namespace Arctrix.PersonalMoneyTracker.Services;
 
+/// <summary>
+/// Account records. Balances change only through transactions (see BalanceLedger), so a
+/// balance update is always committed together with the row that caused it.
+/// </summary>
 public interface IAccountService
 {
     Task<List<Account>> GetAllAsync(bool includeArchived = false);
     Task<Account?> GetByIdAsync(int id);
     Task<int> SaveAsync(Account account);
     Task ArchiveAsync(int accountId);
-    Task AdjustBalanceAsync(int accountId, decimal delta);
 
     /// <summary>
     /// The account's balance expressed in <paramref name="currency"/>. Balances are stored in
@@ -62,14 +65,6 @@ public class AccountService : IAccountService
         var account = await GetByIdAsync(accountId);
         if (account is null) return;
         account.IsArchived = true;
-        await _db.Connection.UpdateAsync(account);
-    }
-
-    public async Task AdjustBalanceAsync(int accountId, decimal delta)
-    {
-        var account = await GetByIdAsync(accountId);
-        if (account is null) return;
-        account.Balance += delta;
         await _db.Connection.UpdateAsync(account);
     }
 

@@ -11,15 +11,15 @@ public interface ITransactionService
     Task<TransactionRecord?> GetByIdAsync(int id);
 
     /// <summary>
-    /// Inserts a transaction and applies its effect to the affected account balance(s).
+    /// Inserts a transaction and applies its effect to the affected account balance(s), atomically.
     /// BaseCurrencyAtEntry must be set to the currency BaseAmount was computed in.
     /// </summary>
     Task AddAsync(TransactionRecord transaction);
 
-    /// <summary>Reverses the old balance effect, applies the new one, and saves the edited row.</summary>
+    /// <summary>Reverses the stored balance effect, applies the new one, and saves the row, atomically.</summary>
     Task UpdateAsync(TransactionRecord original, TransactionRecord updated);
 
-    /// <summary>Reverses the balance effect and deletes the row.</summary>
+    /// <summary>Reverses the balance effect and deletes the row, atomically.</summary>
     Task DeleteAsync(TransactionRecord transaction);
 
     /// <summary>
@@ -86,26 +86,20 @@ public class TransactionService : ITransactionService
     {
         RequireRecordedCurrency(transaction);
         await _db.InitializeAsync();
-        await SetAccountAmountsAsync(transaction);
-        await _db.Connection.InsertAsync(transaction);
-        await ApplyBalanceEffectAsync(transaction, reverse: false);
+        await _db.Connection.RunInTransactionAsync(conn => BalanceLedger.Insert(conn, transaction, _currency));
     }
 
     public async Task UpdateAsync(TransactionRecord original, TransactionRecord updated)
     {
         RequireRecordedCurrency(updated);
         await _db.InitializeAsync();
-        await ApplyBalanceEffectAsync(original, reverse: true);
-        await SetAccountAmountsAsync(updated);
-        await ApplyBalanceEffectAsync(updated, reverse: false);
-        await _db.Connection.UpdateAsync(updated);
+        await _db.Connection.RunInTransactionAsync(conn => BalanceLedger.Update(conn, original, updated, _currency));
     }
 
     public async Task DeleteAsync(TransactionRecord transaction)
     {
         await _db.InitializeAsync();
-        await ApplyBalanceEffectAsync(transaction, reverse: true);
-        await _db.Connection.DeleteAsync(transaction);
+        await _db.Connection.RunInTransactionAsync(conn => BalanceLedger.Delete(conn, transaction));
     }
 
     public async Task<IReadOnlyList<MonthlyFlow>> GetMonthlyFlowsAsync(DateTime endMonth, int monthCount)
@@ -178,7 +172,7 @@ public class TransactionService : ITransactionService
 
         // Each transaction's change to active-account balances, converted live like the balances.
         var changes = later
-            .Select(t => (t.Date, Change: BalanceEffects(t).Sum(e =>
+            .Select(t => (t.Date, Change: BalanceLedger.Effects(t).Sum(e =>
                 accounts.TryGetValue(e.AccountId, out var account) && !account.IsArchived
                     ? _currency.Convert(e.Delta, account.Currency, currency)
                     : 0m)))
@@ -201,62 +195,5 @@ public class TransactionService : ITransactionService
     {
         if (string.IsNullOrWhiteSpace(t.BaseCurrencyAtEntry))
             throw new ArgumentException("Set BaseCurrencyAtEntry to the base currency BaseAmount was computed in.", nameof(t));
-    }
-
-    /// <summary>
-    /// Records how far each affected account moves, in that account's own currency: a USD 100
-    /// expense on a MYR account moves the balance by MYR 470, not 100. Stored on the row so the
-    /// effect reverses exactly later.
-    /// </summary>
-    private async Task SetAccountAmountsAsync(TransactionRecord t)
-    {
-        t.AccountAmount = await InAccountCurrencyAsync(t, t.AccountId);
-        t.ToAccountAmount = t.ToAccountId is int toId ? await InAccountCurrencyAsync(t, toId) : null;
-    }
-
-    private async Task<decimal> InAccountCurrencyAsync(TransactionRecord t, int accountId)
-    {
-        var account = await _accounts.GetByIdAsync(accountId);
-        if (account is null)
-            return t.OriginalAmount;
-
-        var converted = _currency.Convert(t.OriginalAmount, t.OriginalCurrency, account.Currency);
-        return Math.Round(converted, 2, MidpointRounding.AwayFromZero);
-    }
-
-    /// <summary>
-    /// A transaction's change to each affected account's balance, in that account's currency.
-    /// Uses the per-account amounts from <see cref="SetAccountAmountsAsync"/>; rows saved before
-    /// those columns existed were applied with OriginalAmount, so they fall back to it.
-    /// </summary>
-    private static IEnumerable<(int AccountId, decimal Delta)> BalanceEffects(TransactionRecord t)
-    {
-        var fromAmount = t.AccountAmount ?? t.OriginalAmount;
-
-        switch (t.Type)
-        {
-            case TransactionType.Income:
-                yield return (t.AccountId, fromAmount);
-                break;
-
-            case TransactionType.Expense:
-                yield return (t.AccountId, -fromAmount);
-                break;
-
-            case TransactionType.Transfer:
-            case TransactionType.Investment:
-                yield return (t.AccountId, -fromAmount);
-                if (t.ToAccountId is int toId)
-                    yield return (toId, t.ToAccountAmount ?? t.OriginalAmount);
-                break;
-        }
-    }
-
-    /// <summary>Applies (or reverses, when reverse=true) a transaction's effect on account balances.</summary>
-    private async Task ApplyBalanceEffectAsync(TransactionRecord t, bool reverse)
-    {
-        var sign = reverse ? -1 : 1;
-        foreach (var (accountId, delta) in BalanceEffects(t))
-            await _accounts.AdjustBalanceAsync(accountId, sign * delta);
     }
 }
