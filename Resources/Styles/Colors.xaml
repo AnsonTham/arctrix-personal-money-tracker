@@ -29,6 +29,12 @@
     <Color x:Key="Negative">#FF6B83</Color>
     <Color x:Key="NegativeSoft">#1FFF6B83</Color>
 
+    <!-- Income vs spending chart series. Validated as an adjacent pair on Surface with the
+         dataviz checks: deuteranopia dE 13.8, normal-vision dE 36.4, contrast 9.6:1 and 4.8:1.
+         (Positive next to Negative collapses to dE 5.4 under deuteranopia, below the floor.) -->
+    <Color x:Key="ChartIncome">#22D3A2</Color>
+    <Color x:Key="ChartExpense">#E5475F</Color>
+
     <!-- Text -->
     <Color x:Key="TextPrimary">#EEF1F5</Color>
     <Color x:Key="TextSecondary">#B4BCC8</Color>

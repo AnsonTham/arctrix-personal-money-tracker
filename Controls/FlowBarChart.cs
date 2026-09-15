@@ -27,7 +27,7 @@ public class FlowBarChart : GraphicsView, IDrawable
         nameof(IncomeColor), typeof(Color), typeof(FlowBarChart), Color.FromArgb("#22D3A2"), propertyChanged: Redraw);
 
     public static readonly BindableProperty ExpenseColorProperty = BindableProperty.Create(
-        nameof(ExpenseColor), typeof(Color), typeof(FlowBarChart), Color.FromArgb("#FF6B83"), propertyChanged: Redraw);
+        nameof(ExpenseColor), typeof(Color), typeof(FlowBarChart), Color.FromArgb("#E5475F"), propertyChanged: Redraw);
 
     public static readonly BindableProperty GridColorProperty = BindableProperty.Create(
         nameof(GridColor), typeof(Color), typeof(FlowBarChart), Color.FromArgb("#252C35"), propertyChanged: Redraw);

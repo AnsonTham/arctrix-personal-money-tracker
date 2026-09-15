@@ -103,7 +103,7 @@
                 <Border Style="{StaticResource Card}">
                     <VerticalStackLayout Spacing="10">
                         <HorizontalStackLayout Spacing="8">
-                            <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource Positive}" VerticalOptions="Center" />
+                            <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource ChartIncome}" VerticalOptions="Center" />
                             <Label Text="Income" Style="{StaticResource Caption}" />
                         </HorizontalStackLayout>
                         <Label Text="{Binding TotalIncome, StringFormat='{0:N2}'}" Style="{StaticResource AmountLarge}" />
@@ -114,7 +114,7 @@
                 <Border Grid.Column="1" Style="{StaticResource Card}">
                     <VerticalStackLayout Spacing="10">
                         <HorizontalStackLayout Spacing="8">
-                            <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource Negative}" VerticalOptions="Center" />
+                            <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource ChartExpense}" VerticalOptions="Center" />
                             <Label Text="Spent" Style="{StaticResource Caption}" />
                         </HorizontalStackLayout>
                         <Label Text="{Binding TotalExpense, StringFormat='{0:N2}'}" Style="{StaticResource AmountLarge}" />
@@ -160,11 +160,11 @@
                         <!-- Legend: rect keys mirror the column marks -->
                         <HorizontalStackLayout Grid.Column="1" Spacing="14" VerticalOptions="Start">
                             <HorizontalStackLayout Spacing="6">
-                                <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="2" Color="{StaticResource Positive}" VerticalOptions="Center" />
+                                <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="2" Color="{StaticResource ChartIncome}" VerticalOptions="Center" />
                                 <Label Text="Income" Style="{StaticResource Caption}" TextColor="{StaticResource TextSecondary}" />
                             </HorizontalStackLayout>
                             <HorizontalStackLayout Spacing="6">
-                                <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="2" Color="{StaticResource Negative}" VerticalOptions="Center" />
+                                <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="2" Color="{StaticResource ChartExpense}" VerticalOptions="Center" />
                                 <Label Text="Spent" Style="{StaticResource Caption}" TextColor="{StaticResource TextSecondary}" />
                             </HorizontalStackLayout>
                         </HorizontalStackLayout>
@@ -174,8 +174,8 @@
                                            HeightRequest="260"
                                            Flows="{Binding Flows}"
                                            ValuePrefix="{Binding BaseCurrency, StringFormat='{0} '}"
-                                           IncomeColor="{StaticResource Positive}"
-                                           ExpenseColor="{StaticResource Negative}"
+                                           IncomeColor="{StaticResource ChartIncome}"
+                                           ExpenseColor="{StaticResource ChartExpense}"
                                            GridColor="{StaticResource Line}"
                                            LabelColor="{StaticResource Muted}"
                                            ValueColor="{StaticResource TextPrimary}"

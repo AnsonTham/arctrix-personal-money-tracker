@@ -5,5 +5,126 @@
              x:Class="Arctrix.PersonalMoneyTracker.Views.ReportsPage"
              x:DataType="vm:ReportsViewModel"
              Title="{Binding Title}">
-    <Label Text="{Binding Title}" Margin="24" />
+
+    <ScrollView>
+        <Grid x:Name="LayoutRoot"
+              HorizontalOptions="Center"
+              Padding="{StaticResource PagePaddingDesktop}"
+              ColumnDefinitions="*,340"
+              RowDefinitions="Auto,Auto"
+              ColumnSpacing="24"
+              RowSpacing="24">
+
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="LayoutStates">
+                    <VisualState x:Name="Wide" />
+                    <VisualState x:Name="Narrow">
+                        <VisualState.Setters>
+                            <Setter Property="Padding" Value="{StaticResource PagePaddingPhone}" />
+                            <Setter Property="ColumnDefinitions" Value="*" />
+                            <Setter Property="RowDefinitions" Value="Auto,Auto,Auto" />
+                            <Setter Property="ColumnSpacing" Value="0" />
+                            <Setter Property="RowSpacing" Value="16" />
+
+                            <Setter TargetName="Header" Property="Margin" Value="4,16,4,0" />
+                            <Setter TargetName="IncludedCard" Property="Grid.Row" Value="2" />
+                            <Setter TargetName="IncludedCard" Property="Grid.Column" Value="0" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+
+            <VerticalStackLayout x:Name="Header" Grid.ColumnSpan="2" Spacing="4">
+                <Label Text="{Binding Title}" Style="{StaticResource H1}" />
+                <Label Text="Monthly PDF summaries you can open, print or share" Style="{StaticResource Body}" />
+            </VerticalStackLayout>
+
+            <!-- Generate -->
+            <Border Grid.Row="1" Style="{StaticResource Card}" Padding="24" VerticalOptions="Start">
+                <VerticalStackLayout Spacing="22">
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="Monthly report" Style="{StaticResource H2}" />
+                        <Label Text="{Binding PeriodLabel}" Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+
+                    <Grid ColumnDefinitions="*,140" ColumnSpacing="16">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="Month" Style="{StaticResource Overline}" />
+                            <Border Style="{StaticResource InputShell}">
+                                <Picker ItemsSource="{Binding Months}" SelectedIndex="{Binding SelectedMonthIndex}" />
+                            </Border>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="10">
+                            <Label Text="Year" Style="{StaticResource Overline}" />
+                            <Border Style="{StaticResource InputShell}">
+                                <Picker ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear}" />
+                            </Border>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <HorizontalStackLayout Spacing="14">
+                        <Button Text="Generate PDF" Command="{Binding GenerateCommand}" />
+                        <ActivityIndicator IsRunning="{Binding GenerateCommand.IsRunning}"
+                                           IsVisible="{Binding GenerateCommand.IsRunning}"
+                                           WidthRequest="22"
+                                           HeightRequest="22"
+                                           VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+
+                    <Label Text="{Binding StatusMessage}" Style="{StaticResource Body}" IsVisible="{Binding HasStatus}" />
+
+                    <HorizontalStackLayout Spacing="10" IsVisible="{Binding HasReport}">
+                        <Button Text="Open" Style="{StaticResource SecondaryButton}" Command="{Binding OpenReportCommand}" />
+                        <Button Text="Share" Style="{StaticResource GhostButton}" Command="{Binding ShareReportCommand}" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- What the report contains -->
+            <Border x:Name="IncludedCard"
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Style="{StaticResource Card}"
+                    VerticalOptions="Start">
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="Included" Style="{StaticResource Overline}" />
+
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                        <Border Style="{StaticResource IconTile}">
+                            <Image Source="icon_dashboard.png" WidthRequest="20" HeightRequest="20" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                            <Label Text="Headline totals" Style="{StaticResource BodyStrong}" />
+                            <Label Text="Net worth, income and spending" Style="{StaticResource Caption}" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                        <Border Style="{StaticResource IconTile}">
+                            <Image Source="icon_analytics.png" WidthRequest="20" HeightRequest="20" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                            <Label Text="Spending by category" Style="{StaticResource BodyStrong}" />
+                            <Label Text="Largest categories first" Style="{StaticResource Caption}" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                        <Border Style="{StaticResource IconTile}">
+                            <Image Source="icon_history.png" WidthRequest="20" HeightRequest="20" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                            <Label Text="Every transaction" Style="{StaticResource BodyStrong}" />
+                            <Label Text="Date, category, notes and amount" Style="{StaticResource Caption}" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <BoxView Style="{StaticResource Divider}" />
+                    <Label Text="Reports are saved on this device only." Style="{StaticResource Caption}" />
+                </VerticalStackLayout>
+            </Border>
+
+        </Grid>
+    </ScrollView>
+
 </ContentPage>
