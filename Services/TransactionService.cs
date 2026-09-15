@@ -33,12 +33,14 @@ public class TransactionService : ITransactionService
     private readonly AppDbContext _db;
     private readonly IAccountService _accounts;
     private readonly ICategoryService _categories;
+    private readonly ICurrencyService _currency;
 
-    public TransactionService(AppDbContext db, IAccountService accounts, ICategoryService categories)
+    public TransactionService(AppDbContext db, IAccountService accounts, ICategoryService categories, ICurrencyService currency)
     {
         _db = db;
         _accounts = accounts;
         _categories = categories;
+        _currency = currency;
     }
 
     public async Task<List<TransactionRecord>> GetAllAsync()
@@ -70,6 +72,7 @@ public class TransactionService : ITransactionService
     public async Task AddAsync(TransactionRecord transaction)
     {
         await _db.InitializeAsync();
+        await SetAccountAmountsAsync(transaction);
         await _db.Connection.InsertAsync(transaction);
         await ApplyBalanceEffectAsync(transaction, reverse: false);
     }
@@ -78,6 +81,7 @@ public class TransactionService : ITransactionService
     {
         await _db.InitializeAsync();
         await ApplyBalanceEffectAsync(original, reverse: true);
+        await SetAccountAmountsAsync(updated);
         await ApplyBalanceEffectAsync(updated, reverse: false);
         await _db.Connection.UpdateAsync(updated);
     }
@@ -153,30 +157,52 @@ public class TransactionService : ITransactionService
     }
 
     /// <summary>
-    /// Applies (or reverses, when reverse=true) a transaction's effect on account
-    /// balances. Amounts are applied in the account's own currency using the
-    /// transaction's OriginalAmount, since Account.Balance is stored per-account.
+    /// Records how far each affected account moves, in that account's own currency: a USD 100
+    /// expense on a MYR account moves the balance by MYR 470, not 100. Stored on the row so the
+    /// effect reverses exactly later.
+    /// </summary>
+    private async Task SetAccountAmountsAsync(TransactionRecord t)
+    {
+        t.AccountAmount = await InAccountCurrencyAsync(t, t.AccountId);
+        t.ToAccountAmount = t.ToAccountId is int toId ? await InAccountCurrencyAsync(t, toId) : null;
+    }
+
+    private async Task<decimal> InAccountCurrencyAsync(TransactionRecord t, int accountId)
+    {
+        var account = await _accounts.GetByIdAsync(accountId);
+        if (account is null)
+            return t.OriginalAmount;
+
+        var converted = _currency.Convert(t.OriginalAmount, t.OriginalCurrency, account.Currency);
+        return Math.Round(converted, 2, MidpointRounding.AwayFromZero);
+    }
+
+    /// <summary>
+    /// Applies (or reverses, when reverse=true) a transaction's effect on account balances using
+    /// the per-account amounts from <see cref="SetAccountAmountsAsync"/>. Rows saved before those
+    /// columns existed were applied with OriginalAmount, so they also reverse with it.
     /// </summary>
     private async Task ApplyBalanceEffectAsync(TransactionRecord t, bool reverse)
     {
         var sign = reverse ? -1 : 1;
+        var fromAmount = t.AccountAmount ?? t.OriginalAmount;
 
         switch (t.Type)
         {
             case TransactionType.Income:
-                await _accounts.AdjustBalanceAsync(t.AccountId, sign * t.OriginalAmount);
+                await _accounts.AdjustBalanceAsync(t.AccountId, sign * fromAmount);
                 break;
 
             case TransactionType.Expense:
-                await _accounts.AdjustBalanceAsync(t.AccountId, -sign * t.OriginalAmount);
+                await _accounts.AdjustBalanceAsync(t.AccountId, -sign * fromAmount);
                 break;
 
             case TransactionType.Transfer:
             case TransactionType.Investment:
-                await _accounts.AdjustBalanceAsync(t.AccountId, -sign * t.OriginalAmount);
+                await _accounts.AdjustBalanceAsync(t.AccountId, -sign * fromAmount);
                 if (t.ToAccountId is int toId)
                 {
-                    await _accounts.AdjustBalanceAsync(toId, sign * t.OriginalAmount);
+                    await _accounts.AdjustBalanceAsync(toId, sign * (t.ToAccountAmount ?? t.OriginalAmount));
                 }
                 break;
         }

@@ -10,9 +10,10 @@ public interface IRecurringPaymentService
     Task DeactivateAsync(int id);
 
     /// <summary>
-    /// Posts a TransactionRecord for every recurring payment whose NextDueDate
-    /// has arrived, then advances NextDueDate by one month. Safe to call on
-    /// every app launch - it is a no-op for payments that are not yet due.
+    /// Posts a TransactionRecord for every occurrence that has come due - including months
+    /// missed while the app wasn't opened - and advances NextDueDate past today. Safe to call
+    /// repeatedly and concurrently: runs are serialized, and an occurrence that already has a
+    /// posted transaction is never posted again. Returns the number of transactions posted.
     /// </summary>
     Task<int> RunDuePaymentsAsync();
 }
@@ -21,11 +22,23 @@ public class RecurringPaymentService : IRecurringPaymentService
 {
     private readonly AppDbContext _db;
     private readonly ITransactionService _transactions;
+    private readonly ISettingsService _settings;
+    private readonly ICurrencyService _currency;
 
-    public RecurringPaymentService(AppDbContext db, ITransactionService transactions)
+    // The service is a singleton; this keeps two overlapping runs (e.g. the Dashboard
+    // appearing twice in quick succession) from both posting the same occurrence.
+    private readonly SemaphoreSlim _runLock = new(1, 1);
+
+    public RecurringPaymentService(
+        AppDbContext db,
+        ITransactionService transactions,
+        ISettingsService settings,
+        ICurrencyService currency)
     {
         _db = db;
         _transactions = transactions;
+        _settings = settings;
+        _currency = currency;
     }
 
     public async Task<List<RecurringPayment>> GetAllAsync(bool includeInactive = false)
@@ -56,34 +69,62 @@ public class RecurringPaymentService : IRecurringPaymentService
 
     public async Task<int> RunDuePaymentsAsync()
     {
-        await _db.InitializeAsync();
-        var due = (await GetAllAsync())
-            .Where(r => r.NextDueDate.Date <= DateTime.Now.Date)
-            .ToList();
-
-        foreach (var payment in due)
+        await _runLock.WaitAsync();
+        try
         {
-            var record = new TransactionRecord
+            await _db.InitializeAsync();
+            var today = DateTime.Today;
+            var baseCurrency = (await _settings.GetAsync()).BaseCurrency;
+            var posted = 0;
+
+            foreach (var payment in (await GetAllAsync()).Where(r => r.NextDueDate.Date <= today))
             {
-                Type = payment.Type,
-                AccountId = payment.AccountId,
-                CategoryId = payment.CategoryId,
-                OriginalAmount = payment.Amount,
-                OriginalCurrency = payment.Currency,
-                ExchangeRate = 1.0m,
-                BaseAmount = payment.Amount,
-                Date = payment.NextDueDate,
-                Notes = $"Recurring: {payment.Name}",
-                RecurringPaymentId = payment.Id
-            };
-            await _transactions.AddAsync(record);
+                var rate = _currency.GetRate(payment.Currency, baseCurrency);
 
-            payment.LastRunDate = payment.NextDueDate;
-            payment.NextDueDate = SafeAddMonth(payment.NextDueDate, payment.DayOfMonth);
-            await _db.Connection.UpdateAsync(payment);
+                while (payment.NextDueDate.Date <= today)
+                {
+                    var dueDate = payment.NextDueDate.Date;
+
+                    if (!await IsPostedAsync(payment.Id, dueDate))
+                    {
+                        await _transactions.AddAsync(new TransactionRecord
+                        {
+                            Type = payment.Type,
+                            AccountId = payment.AccountId,
+                            CategoryId = payment.CategoryId,
+                            OriginalAmount = payment.Amount,
+                            OriginalCurrency = payment.Currency,
+                            ExchangeRate = rate,
+                            BaseAmount = payment.Amount * rate,
+                            Date = dueDate,
+                            Notes = $"Recurring: {payment.Name}",
+                            RecurringPaymentId = payment.Id
+                        });
+                        posted++;
+                    }
+
+                    // Saved after each occurrence, so an interrupted run resumes where it stopped.
+                    payment.LastRunDate = dueDate;
+                    payment.NextDueDate = SafeAddMonth(dueDate, payment.DayOfMonth);
+                    await _db.Connection.UpdateAsync(payment);
+                }
+            }
+
+            return posted;
         }
+        finally
+        {
+            _runLock.Release();
+        }
+    }
 
-        return due.Count;
+    private async Task<bool> IsPostedAsync(int paymentId, DateTime dueDate)
+    {
+        var nextDay = dueDate.AddDays(1);
+        var count = await _db.Connection.Table<TransactionRecord>()
+            .Where(t => t.RecurringPaymentId == paymentId && t.Date >= dueDate && t.Date < nextDay)
+            .CountAsync();
+        return count > 0;
     }
 
     private static DateTime SafeAddMonth(DateTime from, int dayOfMonth)

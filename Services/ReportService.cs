@@ -42,7 +42,8 @@ public class ReportService : IReportService
 
         var income = monthTx.Where(t => t.Type == TransactionType.Income).Sum(t => t.BaseAmount);
         var expense = monthTx.Where(t => t.Type == TransactionType.Expense).Sum(t => t.BaseAmount);
-        var netWorth = accounts.Sum(a => a.Balance);
+        // Matches the Dashboard: active accounts only, each converted from its own currency.
+        var netWorth = accounts.Where(a => !a.IsArchived).Sum(a => _accounts.BalanceIn(a, currency));
         var monthName = new DateTime(year, month, 1).ToString("MMMM yyyy");
 
         var byCategory = monthTx
@@ -144,7 +145,7 @@ public class ReportService : IReportService
                             table.Cell().Text(t.Date.ToString("d MMM"));
                             table.Cell().Text(catName);
                             table.Cell().Text(string.IsNullOrWhiteSpace(t.Notes) ? "-" : t.Notes);
-                            table.Cell().AlignRight().Text($"{(t.Type == TransactionType.Income ? "+" : "-")} {currency} {t.BaseAmount:N2}");
+                            table.Cell().AlignRight().Text($"{(t.Type == TransactionType.Income ? "+ " : t.Type == TransactionType.Expense ? "- " : "")}{currency} {t.BaseAmount:N2}");
                         }
                     });
                 });

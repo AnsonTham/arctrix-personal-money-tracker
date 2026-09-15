@@ -40,13 +40,15 @@ public partial class AccountsViewModel : ViewModelBase
             Accounts.Clear();
             foreach (var a in all) Accounts.Add(a);
 
-            TotalBalance = all.Sum(a => a.Balance);
+            // Each account holds its own currency; convert before adding them up.
+            decimal InBase(Account a) => _accounts.BalanceIn(a, BaseCurrency);
+            TotalBalance = all.Sum(a => InBase(a));
             AccountCountLabel = all.Count == 1 ? "1 active account" : $"{all.Count} active accounts";
 
             Breakdown.Clear();
-            foreach (var group in all.GroupBy(a => a.Type).OrderByDescending(g => g.Sum(a => a.Balance)))
+            foreach (var group in all.GroupBy(a => a.Type).OrderByDescending(g => g.Sum(a => InBase(a))))
             {
-                var amount = group.Sum(a => a.Balance);
+                var amount = group.Sum(a => InBase(a));
                 var share = TotalBalance <= 0 ? 0 : (double)(Math.Max(amount, 0) / TotalBalance);
                 Breakdown.Add(new BalanceShare(AccountTypeLabelConverter.Label(group.Key), amount, share));
             }

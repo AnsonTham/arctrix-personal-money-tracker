@@ -83,9 +83,11 @@ public partial class DashboardViewModel : ViewModelBase
             Accounts.Clear();
             foreach (var a in accounts) Accounts.Add(a);
 
-            CashBalance = accounts.Where(a => a.Type is AccountType.Bank or AccountType.Cash or AccountType.EWallet).Sum(a => a.Balance);
-            InvestmentBalance = accounts.Where(a => a.Type == AccountType.Investment).Sum(a => a.Balance);
-            NetWorth = accounts.Sum(a => a.Balance);
+            // Each account holds its own currency; convert before adding them up.
+            decimal InBase(Account a) => _accounts.BalanceIn(a, BaseCurrency);
+            CashBalance = accounts.Where(a => a.Type is AccountType.Bank or AccountType.Cash or AccountType.EWallet).Sum(a => InBase(a));
+            InvestmentBalance = accounts.Where(a => a.Type == AccountType.Investment).Sum(a => InBase(a));
+            NetWorth = accounts.Sum(a => InBase(a));
 
             var flows = await _transactions.GetMonthlyFlowsAsync(now, TrendMonths);
             var thisMonth = flows[^1];

@@ -10,14 +10,24 @@ public interface IAccountService
     Task<int> SaveAsync(Account account);
     Task ArchiveAsync(int accountId);
     Task AdjustBalanceAsync(int accountId, decimal delta);
-    Task<decimal> GetTotalBalanceAsync(AccountType? type = null);
+
+    /// <summary>
+    /// The account's balance expressed in <paramref name="currency"/>. Balances are stored in
+    /// each account's own currency, so convert before adding accounts together.
+    /// </summary>
+    decimal BalanceIn(Account account, string currency);
 }
 
 public class AccountService : IAccountService
 {
     private readonly AppDbContext _db;
+    private readonly ICurrencyService _currency;
 
-    public AccountService(AppDbContext db) => _db = db;
+    public AccountService(AppDbContext db, ICurrencyService currency)
+    {
+        _db = db;
+        _currency = currency;
+    }
 
     public async Task<List<Account>> GetAllAsync(bool includeArchived = false)
     {
@@ -63,11 +73,6 @@ public class AccountService : IAccountService
         await _db.Connection.UpdateAsync(account);
     }
 
-    public async Task<decimal> GetTotalBalanceAsync(AccountType? type = null)
-    {
-        var accounts = await GetAllAsync();
-        return accounts
-            .Where(a => type is null || a.Type == type)
-            .Sum(a => a.Balance);
-    }
+    public decimal BalanceIn(Account account, string currency)
+        => _currency.Convert(account.Balance, account.Currency, currency);
 }

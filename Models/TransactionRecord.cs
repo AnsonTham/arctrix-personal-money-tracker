@@ -45,6 +45,16 @@ public class TransactionRecord
     [MaxLength(500)]
     public string Notes { get; set; } = string.Empty;
 
+    /// <summary>
+    /// How much AccountId's balance moved, in that account's own currency. Recorded when the
+    /// transaction is saved so the effect can be reversed exactly. Null on rows saved before
+    /// this column existed; those were applied with OriginalAmount.
+    /// </summary>
+    public decimal? AccountAmount { get; set; }
+
+    /// <summary>Same as <see cref="AccountAmount"/>, for ToAccountId.</summary>
+    public decimal? ToAccountAmount { get; set; }
+
     /// <summary>Set when this row was generated automatically from a RecurringPayment.</summary>
     public int? RecurringPaymentId { get; set; }
 
