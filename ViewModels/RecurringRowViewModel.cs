@@ -1,3 +1,4 @@
+using Arctrix.PersonalMoneyTracker.Helpers;
 using Arctrix.PersonalMoneyTracker.Models;
 
 namespace Arctrix.PersonalMoneyTracker.ViewModels;
@@ -7,8 +8,10 @@ public class RecurringRowViewModel
 {
     public required RecurringPayment Payment { get; init; }
     public string CategoryName { get; init; } = "Others";
-    public string CategoryIcon { get; init; } = "•";
+    public string CategoryIcon { get; init; } = CategoryIcons.Other;
     public string AccountName { get; init; } = string.Empty;
+
+    public string CategoryIconFile => CategoryIcons.FileFor(CategoryIcon);
 
     public string Name => Payment.Name;
 

@@ -1,4 +1,5 @@
 using SQLite;
+using Arctrix.PersonalMoneyTracker.Helpers;
 
 namespace Arctrix.PersonalMoneyTracker.Models;
 
@@ -14,9 +15,15 @@ public class Category
     [MaxLength(40)]
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>Segoe/Material glyph or emoji shown as the category icon.</summary>
-    [MaxLength(8)]
-    public string Icon { get; set; } = "•";
+    /// <summary>
+    /// Icon key, e.g. "food" (see <see cref="CategoryIcons"/>). Databases created before the line
+    /// icons stored emoji here; AppDbContext updates the seeded categories on startup.
+    /// </summary>
+    [MaxLength(40)]
+    public string Icon { get; set; } = CategoryIcons.Other;
+
+    [Ignore]
+    public string IconFile => CategoryIcons.FileFor(Icon);
 
     [MaxLength(9)]
     public string ColorHex { get; set; } = "#8F98A7";
@@ -31,15 +38,15 @@ public class Category
 
     public static readonly (string Name, string Icon, TransactionType Type)[] QuickAddDefaults =
     {
-        ("Food",          "🍔", TransactionType.Expense),
-        ("Transport",     "🚗", TransactionType.Expense),
-        ("Shopping",      "🛍️", TransactionType.Expense),
-        ("Bills",         "🧾", TransactionType.Expense),
-        ("Drinks",        "🥤", TransactionType.Expense),
-        ("Entertainment", "🎬", TransactionType.Expense),
-        ("Others",        "•",  TransactionType.Expense),
-        ("Investment",    "📈", TransactionType.Investment),
-        ("Income",        "💰", TransactionType.Income),
-        ("Transfer",      "↔️", TransactionType.Transfer),
+        ("Food",          "food",          TransactionType.Expense),
+        ("Transport",     "transport",     TransactionType.Expense),
+        ("Shopping",      "shopping",      TransactionType.Expense),
+        ("Bills",         "bills",         TransactionType.Expense),
+        ("Drinks",        "drinks",        TransactionType.Expense),
+        ("Entertainment", "entertainment", TransactionType.Expense),
+        ("Others",        CategoryIcons.Other, TransactionType.Expense),
+        ("Investment",    "investment",    TransactionType.Investment),
+        ("Income",        "income",        TransactionType.Income),
+        ("Transfer",      "transfer",      TransactionType.Transfer),
     };
 }

@@ -1,3 +1,4 @@
+using Arctrix.PersonalMoneyTracker.Helpers;
 using Arctrix.PersonalMoneyTracker.Models;
 
 namespace Arctrix.PersonalMoneyTracker.ViewModels;
@@ -8,12 +9,14 @@ public class TransactionRowViewModel
     public int Id { get; init; }
     public TransactionType Type { get; init; }
     public string CategoryName { get; init; } = string.Empty;
-    public string CategoryIcon { get; init; } = "•";
+    public string CategoryIcon { get; init; } = CategoryIcons.Other;
     public string AccountName { get; init; } = string.Empty;
     public DateTime Date { get; init; }
     public decimal BaseAmount { get; init; }
     public string Notes { get; init; } = string.Empty;
     public string BaseCurrency { get; init; } = "MYR";
+
+    public string CategoryIconFile => CategoryIcons.FileFor(CategoryIcon);
 
     public string DateLabel => Date.Date == DateTime.Today ? "Today"
         : Date.Date == DateTime.Today.AddDays(-1) ? "Yesterday"
@@ -32,7 +35,7 @@ public class TransactionRowViewModel
         Id = record.Id,
         Type = record.Type,
         CategoryName = category?.Name ?? "Others",
-        CategoryIcon = category?.Icon ?? "•",
+        CategoryIcon = category?.Icon ?? CategoryIcons.Other,
         AccountName = account?.Name ?? string.Empty,
         Date = record.Date,
         BaseAmount = record.BaseAmount,

@@ -33,7 +33,8 @@ public class CategorySpend
 {
     public int CategoryId { get; init; }
     public string Name { get; init; } = string.Empty;
-    public string Icon { get; init; } = "•";
+    public string Icon { get; init; } = Helpers.CategoryIcons.Other;
+    public string IconFile => Helpers.CategoryIcons.FileFor(Icon);
     public string ColorHex { get; init; } = "#8F98A7";
     public string Currency { get; init; } = string.Empty;
     public decimal Amount { get; init; }

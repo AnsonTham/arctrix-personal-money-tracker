@@ -37,6 +37,22 @@ public class AppDbContext
 
         await SeedIfEmptyAsync();
         await StampRecordedBaseCurrencyAsync();
+        await UpdateSeededCategoryIconsAsync();
+    }
+
+    /// <summary>
+    /// Seeded categories originally stored emoji as their icon. Point them at the line-icon keys;
+    /// only the icon column of the built-in categories changes, and it's a no-op once updated.
+    /// </summary>
+    private async Task UpdateSeededCategoryIconsAsync()
+    {
+        foreach (var (name, icon, _) in Category.QuickAddDefaults)
+        {
+            await Connection.ExecuteAsync(
+                $"UPDATE {nameof(Category)} SET {nameof(Category.Icon)} = ? " +
+                $"WHERE {nameof(Category.IsSystem)} = 1 AND {nameof(Category.Name)} = ? AND {nameof(Category.Icon)} <> ?",
+                icon, name, icon);
+        }
     }
 
     /// <summary>

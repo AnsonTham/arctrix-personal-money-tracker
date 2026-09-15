@@ -59,7 +59,7 @@ public partial class RecurringViewModel : ViewModelBase
                 {
                     Payment = payment,
                     CategoryName = category?.Name ?? "Others",
-                    CategoryIcon = category?.Icon ?? "•",
+                    CategoryIcon = category?.Icon ?? CategoryIcons.Other,
                     AccountName = account?.Name ?? string.Empty
                 });
             }

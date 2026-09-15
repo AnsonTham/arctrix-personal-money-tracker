@@ -185,7 +185,7 @@ public partial class DashboardViewModel : ViewModelBase
         return spending.Take(maxRows - 1).Append(new CategorySpend
         {
             Name = "Other",
-            Icon = "•",
+            Icon = CategoryIcons.Other,
             Currency = currency,
             Amount = tail.Sum(c => c.Amount),
             PercentOfTotal = tail.Sum(c => c.PercentOfTotal)

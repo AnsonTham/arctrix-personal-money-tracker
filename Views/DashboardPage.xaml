@@ -208,7 +208,7 @@
                                     </Grid.GestureRecognizers>
 
                                     <Border Style="{StaticResource IconTile}">
-                                        <Label Text="{Binding CategoryIcon}" FontSize="18" HorizontalOptions="Center" VerticalOptions="Center" />
+                                        <Image Source="{Binding CategoryIconFile}" WidthRequest="20" HeightRequest="20" HorizontalOptions="Center" VerticalOptions="Center" />
                                     </Border>
 
                                     <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
@@ -260,7 +260,7 @@
                             <DataTemplate x:DataType="models:CategorySpend">
                                 <VerticalStackLayout Spacing="7">
                                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                                        <Label Text="{Binding Icon}" FontSize="14" VerticalOptions="Center" />
+                                        <Image Source="{Binding IconFile}" WidthRequest="18" HeightRequest="18" VerticalOptions="Center" />
                                         <Label Grid.Column="1" Text="{Binding Name}" Style="{StaticResource BodyStrong}" VerticalOptions="Center" />
                                         <Label Grid.Column="2" VerticalOptions="Center">
                                             <Label.FormattedText>

@@ -119,7 +119,7 @@
                                             </DataTrigger>
                                         </Border.Triggers>
                                         <HorizontalStackLayout Spacing="8">
-                                            <Label Text="{Binding Category.Icon}" FontSize="15" VerticalOptions="Center" />
+                                            <Image Source="{Binding Category.IconFile}" WidthRequest="18" HeightRequest="18" VerticalOptions="Center" />
                                             <Label Text="{Binding Category.Name}" FontFamily="InterMedium" FontSize="13" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center">
                                                 <Label.Triggers>
                                                     <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">

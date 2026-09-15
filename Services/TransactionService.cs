@@ -147,7 +147,7 @@ public class TransactionService : ITransactionService
                 {
                     CategoryId = g.Key.CategoryId,
                     Name = category?.Name ?? "Others",
-                    Icon = category?.Icon ?? "•",
+                    Icon = category?.Icon ?? Helpers.CategoryIcons.Other,
                     ColorHex = category?.ColorHex ?? "#8F98A7",
                     Currency = g.Key.Currency,
                     Amount = amount,
