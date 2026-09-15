@@ -47,7 +47,15 @@
                         <Label Text="{Binding PeriodLabel}" Style="{StaticResource Caption}" />
                     </VerticalStackLayout>
 
-                    <Grid ColumnDefinitions="*,140" ColumnSpacing="16">
+                    <Border Style="{StaticResource CardInset}" IsVisible="{Binding IsReportingUnavailable}">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Reports are available on Windows for now" Style="{StaticResource BodyStrong}" />
+                            <Label Text="PDF generation isn't supported on this device yet. Open Arctrix on a Windows PC to create monthly reports."
+                                   Style="{StaticResource Body}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Grid ColumnDefinitions="*,140" ColumnSpacing="16" IsVisible="{Binding IsReportingSupported}">
                         <VerticalStackLayout Spacing="10">
                             <Label Text="Month" Style="{StaticResource Overline}" />
                             <Border Style="{StaticResource InputShell}">
@@ -62,7 +70,7 @@
                         </VerticalStackLayout>
                     </Grid>
 
-                    <HorizontalStackLayout Spacing="14">
+                    <HorizontalStackLayout Spacing="14" IsVisible="{Binding IsReportingSupported}">
                         <Button Text="Generate PDF" Command="{Binding GenerateCommand}" />
                         <ActivityIndicator IsRunning="{Binding GenerateCommand.IsRunning}"
                                            IsVisible="{Binding GenerateCommand.IsRunning}"

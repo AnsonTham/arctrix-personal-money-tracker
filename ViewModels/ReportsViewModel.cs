@@ -48,6 +48,11 @@ public partial class ReportsViewModel : ViewModelBase
 
     public bool HasStatus => StatusMessage.Length > 0;
 
+    /// <summary>False on Android and iOS, where PDF generation isn't available yet.</summary>
+    public bool IsReportingSupported => _reports.IsSupported;
+
+    public bool IsReportingUnavailable => !_reports.IsSupported;
+
     public string PeriodLabel => SelectedMonthIndex is >= 0 and < 12
         ? new DateTime(SelectedYear, SelectedMonthIndex + 1, 1).ToString("MMMM yyyy", CultureInfo.CurrentCulture)
         : string.Empty;
@@ -60,6 +65,9 @@ public partial class ReportsViewModel : ViewModelBase
     [RelayCommand]
     private async Task Generate()
     {
+        if (!_reports.IsSupported)
+            return;
+
         StatusMessage = string.Empty;
         try
         {

@@ -7,12 +7,7 @@ using Colors = QuestPDF.Helpers.Colors;
 
 namespace Arctrix.PersonalMoneyTracker.Services;
 
-public interface IReportService
-{
-    /// <summary>Builds a monthly PDF summary and returns the saved file path.</summary>
-    Task<string> GenerateMonthlyReportAsync(int year, int month);
-}
-
+/// <summary>QuestPDF monthly report. Compiled for Windows only (see the .csproj).</summary>
 public class ReportService : IReportService
 {
     private readonly ITransactionService _transactions;
@@ -31,6 +26,8 @@ public class ReportService : IReportService
         _accounts = accounts;
         _settings = settings;
     }
+
+    public bool IsSupported => true;
 
     public async Task<string> GenerateMonthlyReportAsync(int year, int month)
     {

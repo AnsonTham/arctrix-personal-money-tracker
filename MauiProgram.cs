@@ -10,8 +10,10 @@ public static class MauiProgram
 {
     public static MauiApp CreateMauiApp()
     {
+#if WINDOWS
         // Free for personal/small-business use; required by QuestPDF at startup.
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+#endif
 
         var builder = MauiApp.CreateBuilder();
         builder
@@ -40,7 +42,12 @@ public static class MauiProgram
         builder.Services.AddSingleton<IRecurringPaymentService, RecurringPaymentService>();
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
         builder.Services.AddSingleton<ICurrencyService, CurrencyService>();
+#if WINDOWS
         builder.Services.AddSingleton<IReportService, ReportService>();
+#else
+        // QuestPDF has no Android/iOS renderer; the Reports page shows a notice instead.
+        builder.Services.AddSingleton<IReportService, UnsupportedReportService>();
+#endif
 
         // ViewModels (transient: fresh state each time a page is navigated to)
         builder.Services.AddTransient<DashboardViewModel>();

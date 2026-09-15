@@ -48,7 +48,15 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <!-- QuestPDF only renders on desktop, so PDF reports are Windows-only for now. Other targets
+       don't reference it or compile ReportService; they register UnsupportedReportService. -->
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
     <PackageReference Include="QuestPDF" Version="2026.8.0" />
+  </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'windows'">
+    <Compile Remove="Services\ReportService.cs" />
   </ItemGroup>
 
 </Project>
