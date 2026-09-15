@@ -155,7 +155,7 @@ public class FlowBarChart : GraphicsView, IDrawable
         {
             var y = Y(v);
             canvas.DrawLine(plot.Left, y, plot.Right, y);
-            canvas.DrawString(ChartScale.Compact(v), dirtyRect.Left, y - 8, LeftBand - 10, 16, HorizontalAlignment.Right, VerticalAlignment.Center);
+            canvas.DrawString(ChartScale.Compact(v, step),dirtyRect.Left, y - 8, LeftBand - 10, 16, HorizontalAlignment.Right, VerticalAlignment.Center);
         }
 
         for (var i = 0; i < flows.Count; i++)
