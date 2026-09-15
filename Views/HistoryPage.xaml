@@ -187,16 +187,16 @@
                         <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource Positive}" VerticalOptions="Center" />
                         <Label Text="Income" Style="{StaticResource Body}" />
                     </HorizontalStackLayout>
-                    <Label Grid.Column="1" Text="{Binding FilteredIncome, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" />
+                    <Label Grid.Column="1" Text="{Binding IncomeLabel}" Style="{StaticResource Amount}" />
 
                     <HorizontalStackLayout Grid.Row="1" Spacing="8" VerticalOptions="Center">
                         <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource Negative}" VerticalOptions="Center" />
                         <Label Text="Spent" Style="{StaticResource Body}" />
                     </HorizontalStackLayout>
-                    <Label Grid.Row="1" Grid.Column="1" Text="{Binding FilteredExpense, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" />
+                    <Label Grid.Row="1" Grid.Column="1" Text="{Binding ExpenseLabel}" Style="{StaticResource Amount}" />
                 </Grid>
 
-                <Label Text="{Binding BaseCurrency, StringFormat='Amounts in {0}'}" Style="{StaticResource Caption}" />
+                <Label Text="Amounts are in the base currency that was active when each was recorded." Style="{StaticResource Caption}" />
             </VerticalStackLayout>
         </Border>
 

@@ -13,17 +13,20 @@ public partial class RecurringViewModel : ViewModelBase
     private readonly IAccountService _accounts;
     private readonly ICategoryService _categories;
     private readonly ISettingsService _settings;
+    private readonly ICurrencyService _currency;
 
     public RecurringViewModel(
         IRecurringPaymentService recurring,
         IAccountService accounts,
         ICategoryService categories,
-        ISettingsService settings)
+        ISettingsService settings,
+        ICurrencyService currency)
     {
         _recurring = recurring;
         _accounts = accounts;
         _categories = categories;
         _settings = settings;
+        _currency = currency;
         Title = "Recurring";
     }
 
@@ -61,8 +64,10 @@ public partial class RecurringViewModel : ViewModelBase
                 });
             }
 
-            MonthlyOutflow = payments.Where(p => p.Type == TransactionType.Expense).Sum(p => p.Amount);
-            MonthlyInflow = payments.Where(p => p.Type == TransactionType.Income).Sum(p => p.Amount);
+            // Upcoming commitments are current state: convert each payment's currency live.
+            decimal InBase(RecurringPayment p) => _currency.Convert(p.Amount, p.Currency, BaseCurrency);
+            MonthlyOutflow = payments.Where(p => p.Type == TransactionType.Expense).Sum(p => InBase(p));
+            MonthlyInflow = payments.Where(p => p.Type == TransactionType.Income).Sum(p => InBase(p));
             CountLabel = payments.Count == 1 ? "1 active payment" : $"{payments.Count} active payments";
             NextUpLabel = Payments.FirstOrDefault() is RecurringRowViewModel next
                 ? $"{next.Name} · {next.DueLabel}"

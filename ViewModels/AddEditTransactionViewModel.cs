@@ -205,6 +205,7 @@ public partial class AddEditTransactionViewModel : ViewModelBase, IQueryAttribut
             OriginalCurrency = CurrencyCode,
             ExchangeRate = rate,
             BaseAmount = amount * rate,
+            BaseCurrencyAtEntry = _baseCurrency,
             Date = Date,
             Notes = Notes.Trim(),
             // Preserve the link to the recurring payment that generated this row, if any.

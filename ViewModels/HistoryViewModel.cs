@@ -46,8 +46,11 @@ public partial class HistoryViewModel : ViewModelBase
     [ObservableProperty] public partial string SearchText { get; set; } = string.Empty;
     [ObservableProperty] public partial string BaseCurrency { get; set; } = "MYR";
     [ObservableProperty] public partial string ResultLabel { get; set; } = string.Empty;
-    [ObservableProperty] public partial decimal FilteredIncome { get; set; }
-    [ObservableProperty] public partial decimal FilteredExpense { get; set; }
+
+    /// <summary>Totals for the current filter, per recorded base currency (e.g. "USD 10.00 + MYR 470.00").</summary>
+    [ObservableProperty] public partial string IncomeLabel { get; set; } = string.Empty;
+    [ObservableProperty] public partial string ExpenseLabel { get; set; } = string.Empty;
+
     [ObservableProperty] public partial string EmptyTitle { get; set; } = string.Empty;
     [ObservableProperty] public partial string EmptyMessage { get; set; } = string.Empty;
 
@@ -109,15 +112,19 @@ public partial class HistoryViewModel : ViewModelBase
         // Rows arrive newest first, so day groups keep that order.
         Groups = rows
             .GroupBy(r => r.Date.Date)
-            .Select(day => new TransactionGroup(day.Key, day, BaseCurrency))
+            .Select(day => new TransactionGroup(day.Key, day))
             .ToList();
 
-        FilteredIncome = rows.Where(r => r.Type == TransactionType.Income).Sum(r => r.BaseAmount);
-        FilteredExpense = rows.Where(r => r.Type == TransactionType.Expense).Sum(r => r.BaseAmount);
+        var primary = MoneySummary.PickPrimary(rows.Select(r => r.BaseCurrency), BaseCurrency);
+        IncomeLabel = Total(rows, TransactionType.Income, primary);
+        ExpenseLabel = Total(rows, TransactionType.Expense, primary);
         ResultLabel = rows.Count == 1 ? "1 transaction" : $"{rows.Count:N0} transactions";
 
         (EmptyTitle, EmptyMessage) = _all.Count == 0
             ? ("No transactions yet", "Add your first income or expense to start tracking.")
             : ("No matches", "Try a different search or filter.");
     }
+
+    private static string Total(IEnumerable<TransactionRowViewModel> rows, TransactionType type, string primaryCurrency) =>
+        new MoneySummary(rows.Where(r => r.Type == type).Select(r => new CurrencyAmount(r.BaseCurrency, r.BaseAmount)), primaryCurrency).Label;
 }

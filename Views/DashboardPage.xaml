@@ -143,8 +143,8 @@
                             <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource Positive}" VerticalOptions="Center" />
                             <Label Text="Income" Style="{StaticResource Caption}" />
                         </HorizontalStackLayout>
-                        <Label Text="{Binding MonthlyIncome, StringFormat='{0:N2}'}" Style="{StaticResource AmountLarge}" />
-                        <Label Text="{Binding MonthLabel}" Style="{StaticResource Caption}" />
+                        <Label Text="{Binding IncomeText}" Style="{StaticResource AmountLarge}" />
+                        <Label Text="{Binding IncomeCaption}" Style="{StaticResource Caption}" />
                     </VerticalStackLayout>
                 </Border>
 
@@ -154,8 +154,8 @@
                             <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource Negative}" VerticalOptions="Center" />
                             <Label Text="Spent" Style="{StaticResource Caption}" />
                         </HorizontalStackLayout>
-                        <Label Text="{Binding MonthlyExpense, StringFormat='{0:N2}'}" Style="{StaticResource AmountLarge}" />
-                        <Label Text="{Binding MonthLabel}" Style="{StaticResource Caption}" />
+                        <Label Text="{Binding ExpenseText}" Style="{StaticResource AmountLarge}" />
+                        <Label Text="{Binding ExpenseCaption}" Style="{StaticResource Caption}" />
                     </VerticalStackLayout>
                 </Border>
 
@@ -245,15 +245,7 @@
                     <Grid ColumnDefinitions="*,Auto">
                         <VerticalStackLayout Spacing="2" VerticalOptions="Center">
                             <Label Text="Spending" Style="{StaticResource H2}" />
-                            <Label Style="{StaticResource Caption}">
-                                <Label.FormattedText>
-                                    <FormattedString>
-                                        <Span Text="{Binding MonthLabel}" />
-                                        <Span Text=" · " />
-                                        <Span Text="{Binding BaseCurrency}" />
-                                    </FormattedString>
-                                </Label.FormattedText>
-                            </Label>
+                            <Label Text="{Binding SpendingCaption}" Style="{StaticResource Caption}" />
                         </VerticalStackLayout>
                         <Button Grid.Column="1"
                                 Text="Analytics"
@@ -291,6 +283,7 @@
                     <Label Text="No spending recorded this month."
                            Style="{StaticResource Body}"
                            IsVisible="{Binding ShowSpendingEmptyState}" />
+                    <Label Text="{Binding SpendingOthersNote}" Style="{StaticResource Caption}" IsVisible="{Binding HasSpendingOthers}" />
                 </VerticalStackLayout>
             </Border>
 

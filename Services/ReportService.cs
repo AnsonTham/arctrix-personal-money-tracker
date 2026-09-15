@@ -35,27 +35,21 @@ public class ReportService : IReportService
     public async Task<string> GenerateMonthlyReportAsync(int year, int month)
     {
         var settings = await _settings.GetAsync();
-        var currency = settings.BaseCurrency;
+        var currentBase = settings.BaseCurrency;
         var monthTx = await _transactions.GetForMonthAsync(year, month);
         var categories = await _categories.GetAllAsync(includeArchived: true);
-        var accounts = await _accounts.GetAllAsync(includeArchived: true);
+        var accounts = await _accounts.GetAllAsync();
 
-        var income = monthTx.Where(t => t.Type == TransactionType.Income).Sum(t => t.BaseAmount);
-        var expense = monthTx.Where(t => t.Type == TransactionType.Expense).Sum(t => t.BaseAmount);
-        // Matches the Dashboard: active accounts only, each converted from its own currency.
-        var netWorth = accounts.Where(a => !a.IsArchived).Sum(a => _accounts.BalanceIn(a, currency));
+        // Net worth is current state, converted live. Month totals stay in each transaction's
+        // recorded base currency, so a past month isn't relabeled after a base currency change.
+        var netWorth = accounts.Sum(a => _accounts.BalanceIn(a, currentBase));
+        var flows = await _transactions.GetMonthlyFlowsAsync(new DateTime(year, month, 1), 1);
+        var monthCurrency = MoneySummary.PickPrimary(flows.Select(f => f.Currency), currentBase);
+        var income = new MoneySummary(flows.Select(f => new CurrencyAmount(f.Currency, f.Income)), monthCurrency);
+        var expense = new MoneySummary(flows.Select(f => new CurrencyAmount(f.Currency, f.Expense)), monthCurrency);
+        var byCategory = await _transactions.GetCategorySpendAsync(year, month);
+        var recordedElsewhere = monthTx.Any(t => t.BaseCurrencyAtEntry != currentBase);
         var monthName = new DateTime(year, month, 1).ToString("MMMM yyyy");
-
-        var byCategory = monthTx
-            .Where(t => t.Type == TransactionType.Expense)
-            .GroupBy(t => t.CategoryId)
-            .Select(g => new
-            {
-                Name = categories.FirstOrDefault(c => c.Id == g.Key)?.Name ?? "Others",
-                Total = g.Sum(t => t.BaseAmount)
-            })
-            .OrderByDescending(x => x.Total)
-            .ToList();
 
         var document = Document.Create(container =>
         {
@@ -79,20 +73,28 @@ public class ReportService : IReportService
                     {
                         row.RelativeItem().Column(c =>
                         {
-                            c.Item().Text("Net Worth").FontColor(Colors.Grey.Darken1);
-                            c.Item().Text($"{currency} {netWorth:N2}").FontSize(16).Bold();
+                            c.Item().Text("Net Worth (today)").FontColor(Colors.Grey.Darken1);
+                            c.Item().Text($"{currentBase} {netWorth:N2}").FontSize(16).Bold();
                         });
                         row.RelativeItem().Column(c =>
                         {
                             c.Item().Text("Income").FontColor(Colors.Grey.Darken1);
-                            c.Item().Text($"{currency} {income:N2}").FontSize(16).Bold().FontColor(Colors.Green.Darken1);
+                            c.Item().Text(income.Label).FontSize(16).Bold().FontColor(Colors.Green.Darken1);
                         });
                         row.RelativeItem().Column(c =>
                         {
                             c.Item().Text("Expense").FontColor(Colors.Grey.Darken1);
-                            c.Item().Text($"{currency} {expense:N2}").FontSize(16).Bold().FontColor(Colors.Red.Darken1);
+                            c.Item().Text(expense.Label).FontSize(16).Bold().FontColor(Colors.Red.Darken1);
                         });
                     });
+
+                    if (recordedElsewhere)
+                    {
+                        col.Item()
+                            .Text($"Month amounts are shown in the base currency that was active when each transaction was recorded (today's is {currentBase}).")
+                            .FontSize(9)
+                            .FontColor(Colors.Grey.Darken1);
+                    }
 
                     col.Item().LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
 
@@ -111,10 +113,10 @@ public class ReportService : IReportService
                             header.Cell().AlignRight().Text("Amount").Bold();
                         });
 
-                        foreach (var row in byCategory)
+                        foreach (var row in byCategory.OrderBy(c => c.Currency != monthCurrency).ThenByDescending(c => c.Amount))
                         {
                             table.Cell().Text(row.Name);
-                            table.Cell().AlignRight().Text($"{currency} {row.Total:N2}");
+                            table.Cell().AlignRight().Text(row.AmountLabel);
                         }
                     });
 
@@ -142,10 +144,11 @@ public class ReportService : IReportService
                         foreach (var t in monthTx.OrderBy(t => t.Date))
                         {
                             var catName = categories.FirstOrDefault(c => c.Id == t.CategoryId)?.Name ?? "Others";
+                            var sign = t.Type == TransactionType.Income ? "+ " : t.Type == TransactionType.Expense ? "- " : "";
                             table.Cell().Text(t.Date.ToString("d MMM"));
                             table.Cell().Text(catName);
                             table.Cell().Text(string.IsNullOrWhiteSpace(t.Notes) ? "-" : t.Notes);
-                            table.Cell().AlignRight().Text($"{(t.Type == TransactionType.Income ? "+ " : t.Type == TransactionType.Expense ? "- " : "")}{currency} {t.BaseAmount:N2}");
+                            table.Cell().AlignRight().Text($"{sign}{t.BaseCurrencyAtEntry} {t.BaseAmount:N2}");
                         }
                     });
                 });

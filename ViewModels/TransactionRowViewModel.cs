@@ -37,7 +37,7 @@ public class TransactionRowViewModel
         Date = record.Date,
         BaseAmount = record.BaseAmount,
         Notes = record.Notes,
-        BaseCurrency = baseCurrency
+        BaseCurrency = record.BaseCurrencyAtEntry ?? baseCurrency
     };
 
     public bool Matches(string query) =>

@@ -96,6 +96,7 @@ public class RecurringPaymentService : IRecurringPaymentService
                             OriginalCurrency = payment.Currency,
                             ExchangeRate = rate,
                             BaseAmount = payment.Amount * rate,
+                            BaseCurrencyAtEntry = baseCurrency,
                             Date = dueDate,
                             Notes = $"Recurring: {payment.Name}",
                             RecurringPaymentId = payment.Id

@@ -10,7 +10,10 @@ public interface ITransactionService
     Task<List<TransactionRecord>> GetForMonthAsync(int year, int month);
     Task<TransactionRecord?> GetByIdAsync(int id);
 
-    /// <summary>Inserts a transaction and applies its effect to the affected account balance(s).</summary>
+    /// <summary>
+    /// Inserts a transaction and applies its effect to the affected account balance(s).
+    /// BaseCurrencyAtEntry must be set to the currency BaseAmount was computed in.
+    /// </summary>
     Task AddAsync(TransactionRecord transaction);
 
     /// <summary>Reverses the old balance effect, applies the new one, and saves the edited row.</summary>
@@ -19,13 +22,23 @@ public interface ITransactionService
     /// <summary>Reverses the balance effect and deletes the row.</summary>
     Task DeleteAsync(TransactionRecord transaction);
 
-    Task<decimal> GetMonthlyTotalAsync(TransactionType type, int year, int month);
-
-    /// <summary>Per-month income, expense and net change for the <paramref name="monthCount"/> months ending with <paramref name="endMonth"/>'s month, oldest first.</summary>
+    /// <summary>
+    /// Income and expense per month and recorded base currency for the <paramref name="monthCount"/>
+    /// months ending with <paramref name="endMonth"/>'s month. Months with no income or expense have
+    /// no entry. Ordered by month, then currency.
+    /// </summary>
     Task<IReadOnlyList<MonthlyFlow>> GetMonthlyFlowsAsync(DateTime endMonth, int monthCount);
 
-    /// <summary>Expense totals grouped by category for one month, largest first.</summary>
+    /// <summary>Expense totals per category and recorded base currency for one month, largest first.</summary>
     Task<IReadOnlyList<CategorySpend>> GetCategorySpendAsync(int year, int month);
+
+    /// <summary>
+    /// Net worth of active accounts at the end of each of the <paramref name="monthCount"/> months
+    /// ending with <paramref name="endMonth"/>'s month, oldest first. Worked back from today's
+    /// balances through each transaction's per-account balance changes, all converted live into
+    /// <paramref name="currency"/>, so the series matches the live net worth figure.
+    /// </summary>
+    Task<IReadOnlyList<MonthlyBalance>> GetMonthEndNetWorthAsync(DateTime endMonth, int monthCount, string currency);
 }
 
 public class TransactionService : ITransactionService
@@ -71,6 +84,7 @@ public class TransactionService : ITransactionService
 
     public async Task AddAsync(TransactionRecord transaction)
     {
+        RequireRecordedCurrency(transaction);
         await _db.InitializeAsync();
         await SetAccountAmountsAsync(transaction);
         await _db.Connection.InsertAsync(transaction);
@@ -79,6 +93,7 @@ public class TransactionService : ITransactionService
 
     public async Task UpdateAsync(TransactionRecord original, TransactionRecord updated)
     {
+        RequireRecordedCurrency(updated);
         await _db.InitializeAsync();
         await ApplyBalanceEffectAsync(original, reverse: true);
         await SetAccountAmountsAsync(updated);
@@ -93,12 +108,6 @@ public class TransactionService : ITransactionService
         await _db.Connection.DeleteAsync(transaction);
     }
 
-    public async Task<decimal> GetMonthlyTotalAsync(TransactionType type, int year, int month)
-    {
-        var monthly = await GetForMonthAsync(year, month);
-        return monthly.Where(t => t.Type == type).Sum(t => t.BaseAmount);
-    }
-
     public async Task<IReadOnlyList<MonthlyFlow>> GetMonthlyFlowsAsync(DateTime endMonth, int monthCount)
     {
         await _db.InitializeAsync();
@@ -109,22 +118,17 @@ public class TransactionService : ITransactionService
             .Where(t => t.Date >= firstMonth && t.Date < afterLastMonth)
             .ToListAsync();
 
-        return Enumerable.Range(0, monthCount)
-            .Select(i => firstMonth.AddMonths(i))
-            .Select(start =>
-            {
-                var month = inRange.Where(t => t.Date.Year == start.Year && t.Date.Month == start.Month).ToList();
-                var income = month.Where(t => t.Type == TransactionType.Income).Sum(t => t.BaseAmount);
-                var expense = month.Where(t => t.Type == TransactionType.Expense).Sum(t => t.BaseAmount);
-
-                // Transfers/investments between tracked accounts leave the total unchanged;
-                // one without a destination account moves money out of the tracked total.
-                var leftTracked = month
-                    .Where(t => t.Type is TransactionType.Transfer or TransactionType.Investment && t.ToAccountId is null)
-                    .Sum(t => t.BaseAmount);
-
-                return new MonthlyFlow(start.Year, start.Month, income, expense, income - expense - leftTracked);
-            })
+        return inRange
+            .Where(t => t.Type is TransactionType.Income or TransactionType.Expense)
+            .GroupBy(t => (t.Date.Year, t.Date.Month, Currency: RecordedCurrency(t)))
+            .Select(g => new MonthlyFlow(
+                g.Key.Year,
+                g.Key.Month,
+                g.Key.Currency,
+                g.Where(t => t.Type == TransactionType.Income).Sum(t => t.BaseAmount),
+                g.Where(t => t.Type == TransactionType.Expense).Sum(t => t.BaseAmount)))
+            .OrderBy(f => f.MonthStart)
+            .ThenBy(f => f.Currency)
             .ToList();
     }
 
@@ -133,27 +137,70 @@ public class TransactionService : ITransactionService
         var expenses = (await GetForMonthAsync(year, month))
             .Where(t => t.Type == TransactionType.Expense)
             .ToList();
-        var total = expenses.Sum(t => t.BaseAmount);
+        var totals = expenses
+            .GroupBy(RecordedCurrency)
+            .ToDictionary(g => g.Key, g => g.Sum(t => t.BaseAmount));
         var categories = (await _categories.GetAllAsync(includeArchived: true)).ToDictionary(c => c.Id);
 
         return expenses
-            .GroupBy(t => t.CategoryId)
+            .GroupBy(t => (t.CategoryId, Currency: RecordedCurrency(t)))
             .Select(g =>
             {
-                categories.TryGetValue(g.Key, out var category);
+                categories.TryGetValue(g.Key.CategoryId, out var category);
                 var amount = g.Sum(t => t.BaseAmount);
+                var total = totals[g.Key.Currency];
                 return new CategorySpend
                 {
-                    CategoryId = g.Key,
+                    CategoryId = g.Key.CategoryId,
                     Name = category?.Name ?? "Others",
                     Icon = category?.Icon ?? "•",
                     ColorHex = category?.ColorHex ?? "#8F98A7",
+                    Currency = g.Key.Currency,
                     Amount = amount,
                     PercentOfTotal = total == 0 ? 0 : (double)(amount / total) * 100.0
                 };
             })
             .OrderByDescending(c => c.Amount)
             .ToList();
+    }
+
+    public async Task<IReadOnlyList<MonthlyBalance>> GetMonthEndNetWorthAsync(DateTime endMonth, int monthCount, string currency)
+    {
+        await _db.InitializeAsync();
+        var accounts = (await _accounts.GetAllAsync(includeArchived: true)).ToDictionary(a => a.Id);
+        var total = accounts.Values.Where(a => !a.IsArchived).Sum(a => _accounts.BalanceIn(a, currency));
+
+        var firstMonth = new DateTime(endMonth.Year, endMonth.Month, 1).AddMonths(1 - monthCount);
+        var afterFirstMonth = firstMonth.AddMonths(1);
+        var later = await _db.Connection.Table<TransactionRecord>()
+            .Where(t => t.Date >= afterFirstMonth)
+            .ToListAsync();
+
+        // Each transaction's change to active-account balances, converted live like the balances.
+        var changes = later
+            .Select(t => (t.Date, Change: BalanceEffects(t).Sum(e =>
+                accounts.TryGetValue(e.AccountId, out var account) && !account.IsArchived
+                    ? _currency.Convert(e.Delta, account.Currency, currency)
+                    : 0m)))
+            .ToList();
+
+        return Enumerable.Range(0, monthCount)
+            .Select(i =>
+            {
+                var monthStart = firstMonth.AddMonths(i);
+                var nextMonth = monthStart.AddMonths(1);
+                var closing = total - changes.Where(c => c.Date >= nextMonth).Sum(c => c.Change);
+                return new MonthlyBalance(monthStart, closing);
+            })
+            .ToList();
+    }
+
+    private static string RecordedCurrency(TransactionRecord t) => t.BaseCurrencyAtEntry ?? string.Empty;
+
+    private static void RequireRecordedCurrency(TransactionRecord t)
+    {
+        if (string.IsNullOrWhiteSpace(t.BaseCurrencyAtEntry))
+            throw new ArgumentException("Set BaseCurrencyAtEntry to the base currency BaseAmount was computed in.", nameof(t));
     }
 
     /// <summary>
@@ -178,33 +225,38 @@ public class TransactionService : ITransactionService
     }
 
     /// <summary>
-    /// Applies (or reverses, when reverse=true) a transaction's effect on account balances using
-    /// the per-account amounts from <see cref="SetAccountAmountsAsync"/>. Rows saved before those
-    /// columns existed were applied with OriginalAmount, so they also reverse with it.
+    /// A transaction's change to each affected account's balance, in that account's currency.
+    /// Uses the per-account amounts from <see cref="SetAccountAmountsAsync"/>; rows saved before
+    /// those columns existed were applied with OriginalAmount, so they fall back to it.
     /// </summary>
-    private async Task ApplyBalanceEffectAsync(TransactionRecord t, bool reverse)
+    private static IEnumerable<(int AccountId, decimal Delta)> BalanceEffects(TransactionRecord t)
     {
-        var sign = reverse ? -1 : 1;
         var fromAmount = t.AccountAmount ?? t.OriginalAmount;
 
         switch (t.Type)
         {
             case TransactionType.Income:
-                await _accounts.AdjustBalanceAsync(t.AccountId, sign * fromAmount);
+                yield return (t.AccountId, fromAmount);
                 break;
 
             case TransactionType.Expense:
-                await _accounts.AdjustBalanceAsync(t.AccountId, -sign * fromAmount);
+                yield return (t.AccountId, -fromAmount);
                 break;
 
             case TransactionType.Transfer:
             case TransactionType.Investment:
-                await _accounts.AdjustBalanceAsync(t.AccountId, -sign * fromAmount);
+                yield return (t.AccountId, -fromAmount);
                 if (t.ToAccountId is int toId)
-                {
-                    await _accounts.AdjustBalanceAsync(toId, sign * (t.ToAccountAmount ?? t.OriginalAmount));
-                }
+                    yield return (toId, t.ToAccountAmount ?? t.OriginalAmount);
                 break;
         }
+    }
+
+    /// <summary>Applies (or reverses, when reverse=true) a transaction's effect on account balances.</summary>
+    private async Task ApplyBalanceEffectAsync(TransactionRecord t, bool reverse)
+    {
+        var sign = reverse ? -1 : 1;
+        foreach (var (accountId, delta) in BalanceEffects(t))
+            await _accounts.AdjustBalanceAsync(accountId, sign * delta);
     }
 }

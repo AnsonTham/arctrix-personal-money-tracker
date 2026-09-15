@@ -35,7 +35,7 @@
                 <VerticalStackLayout Spacing="18">
                     <VerticalStackLayout Spacing="4">
                         <Label Text="Base currency" Style="{StaticResource H2}" />
-                        <Label Text="Totals, charts and reports are shown in this currency. Existing transactions keep the exchange rate recorded when they were entered."
+                        <Label Text="Balances and net worth are converted into this currency live. Past transactions keep the base currency they were recorded in and are labeled with it."
                                Style="{StaticResource Body}" />
                     </VerticalStackLayout>
 

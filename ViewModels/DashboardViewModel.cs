@@ -38,11 +38,11 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty] public partial string TodayLabel { get; set; } = string.Empty;
     [ObservableProperty] public partial string MonthLabel { get; set; } = string.Empty;
     [ObservableProperty] public partial string BaseCurrency { get; set; } = "MYR";
+
+    // Current state: converted live into today's base currency.
     [ObservableProperty] public partial decimal NetWorth { get; set; }
     [ObservableProperty] public partial decimal CashBalance { get; set; }
     [ObservableProperty] public partial decimal InvestmentBalance { get; set; }
-    [ObservableProperty] public partial decimal MonthlyIncome { get; set; }
-    [ObservableProperty] public partial decimal MonthlyExpense { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(NetWorthChangeArrow))]
@@ -50,12 +50,26 @@ public partial class DashboardViewModel : ViewModelBase
     public partial decimal NetWorthChange { get; set; }
 
     [ObservableProperty] public partial IReadOnlyList<ChartPoint> NetWorthTrend { get; set; } = [];
+
+    // This month's flows: in the base currency each transaction was recorded in.
+    [ObservableProperty] public partial string IncomeText { get; set; } = "0.00";
+    [ObservableProperty] public partial string IncomeCaption { get; set; } = string.Empty;
+    [ObservableProperty] public partial string ExpenseText { get; set; } = "0.00";
+    [ObservableProperty] public partial string ExpenseCaption { get; set; } = string.Empty;
+    [ObservableProperty] public partial string SpendingCaption { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSpendingOthers))]
+    public partial string SpendingOthersNote { get; set; } = string.Empty;
+
     [ObservableProperty] public partial bool ShowRecentEmptyState { get; set; }
     [ObservableProperty] public partial bool ShowSpendingEmptyState { get; set; }
 
     public ObservableCollection<Account> Accounts { get; } = new();
     public ObservableCollection<TransactionRowViewModel> RecentTransactions { get; } = new();
     public ObservableCollection<CategorySpend> TopSpending { get; } = new();
+
+    public bool HasSpendingOthers => SpendingOthersNote.Length > 0;
 
     /// <summary>Direction glyph paired with the change label, so direction never relies on color alone.</summary>
     public string NetWorthChangeArrow => NetWorthChange > 0 ? "▲" : NetWorthChange < 0 ? "▼" : "•";
@@ -89,16 +103,27 @@ public partial class DashboardViewModel : ViewModelBase
             InvestmentBalance = accounts.Where(a => a.Type == AccountType.Investment).Sum(a => InBase(a));
             NetWorth = accounts.Sum(a => InBase(a));
 
-            var flows = await _transactions.GetMonthlyFlowsAsync(now, TrendMonths);
-            var thisMonth = flows[^1];
-            MonthlyIncome = thisMonth.Income;
-            MonthlyExpense = thisMonth.Expense;
-            NetWorthChange = thisMonth.NetChange;
-            NetWorthTrend = BuildNetWorthTrend(NetWorth, flows);
+            var monthEnds = await _transactions.GetMonthEndNetWorthAsync(now, TrendMonths, BaseCurrency);
+            NetWorthTrend = monthEnds.Select(m => new ChartPoint(m.MonthStart.ToString("MMM"), (double)m.Total)).ToList();
+            NetWorthChange = monthEnds.Count > 1 ? monthEnds[^1].Total - monthEnds[^2].Total : 0;
 
+            var flows = await _transactions.GetMonthlyFlowsAsync(now, 1);
+            var monthCurrency = MoneySummary.PickPrimary(flows.Select(f => f.Currency), BaseCurrency);
+            var income = new MoneySummary(flows.Select(f => new CurrencyAmount(f.Currency, f.Income)), monthCurrency);
+            var expense = new MoneySummary(flows.Select(f => new CurrencyAmount(f.Currency, f.Expense)), monthCurrency);
+            IncomeText = income.Primary.Amount.ToString("N2");
+            IncomeCaption = Caption(income);
+            ExpenseText = expense.Primary.Amount.ToString("N2");
+            ExpenseCaption = Caption(expense);
+
+            var spending = await _transactions.GetCategorySpendAsync(now.Year, now.Month);
             TopSpending.Clear();
-            foreach (var c in FoldTail(await _transactions.GetCategorySpendAsync(now.Year, now.Month), SpendingRows))
+            foreach (var c in FoldTail(spending.Where(c => c.Currency == monthCurrency).ToList(), SpendingRows, monthCurrency))
                 TopSpending.Add(c);
+            SpendingCaption = $"{MonthLabel} · {monthCurrency}";
+            SpendingOthersNote = expense.HasOthers
+                ? $"Also {expense.OthersLabel}, recorded under a different base currency."
+                : string.Empty;
             ShowSpendingEmptyState = TopSpending.Count == 0;
 
             var recent = await _transactions.GetRecentAsync(RecentCount);
@@ -145,25 +170,13 @@ public partial class DashboardViewModel : ViewModelBase
     private static Task GoToAddTransaction(TransactionType type) =>
         Shell.Current.GoToAsync($"{Routes.AddTransaction}?{Routes.TransactionTypeParam}={type}");
 
-    /// <summary>
-    /// There is no balance history table, so month-end totals are reconstructed by walking
-    /// back from today's total: each earlier month ends at the next month's end minus that
-    /// month's net change.
-    /// </summary>
-    private static IReadOnlyList<ChartPoint> BuildNetWorthTrend(decimal currentTotal, IReadOnlyList<MonthlyFlow> flows)
-    {
-        var points = new ChartPoint[flows.Count];
-        var monthEnd = currentTotal;
-        for (var i = flows.Count - 1; i >= 0; i--)
-        {
-            points[i] = new ChartPoint(flows[i].MonthStart.ToString("MMM"), (double)monthEnd);
-            monthEnd -= flows[i].NetChange;
-        }
-        return points;
-    }
+    /// <summary>"September · MYR", plus any amounts recorded under other base currencies.</summary>
+    private string Caption(MoneySummary summary) => summary.HasOthers
+        ? $"{MonthLabel} · {summary.Primary.Currency}, plus {summary.OthersLabel}"
+        : $"{MonthLabel} · {summary.Primary.Currency}";
 
     /// <summary>Keeps the largest categories and folds the rest into a single "Other" row.</summary>
-    private static IEnumerable<CategorySpend> FoldTail(IReadOnlyList<CategorySpend> spending, int maxRows)
+    private static IEnumerable<CategorySpend> FoldTail(IReadOnlyList<CategorySpend> spending, int maxRows, string currency)
     {
         if (spending.Count <= maxRows)
             return spending;
@@ -173,6 +186,7 @@ public partial class DashboardViewModel : ViewModelBase
         {
             Name = "Other",
             Icon = "•",
+            Currency = currency,
             Amount = tail.Sum(c => c.Amount),
             PercentOfTotal = tail.Sum(c => c.PercentOfTotal)
         });

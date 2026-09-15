@@ -36,6 +36,21 @@ public class AppDbContext
         await _connection.CreateTableAsync<AppSettings>();
 
         await SeedIfEmptyAsync();
+        await StampRecordedBaseCurrencyAsync();
+    }
+
+    /// <summary>
+    /// Transactions saved before TransactionRecord.BaseCurrencyAtEntry existed have no record of
+    /// which base currency their BaseAmount was computed in. The base currency setting at upgrade
+    /// time is the best record available, so they are stamped with it. A no-op once stamped.
+    /// </summary>
+    private async Task StampRecordedBaseCurrencyAsync()
+    {
+        var settings = await Connection.Table<AppSettings>().FirstOrDefaultAsync();
+        await Connection.ExecuteAsync(
+            $"UPDATE {nameof(TransactionRecord)} SET {nameof(TransactionRecord.BaseCurrencyAtEntry)} = ? " +
+            $"WHERE {nameof(TransactionRecord.BaseCurrencyAtEntry)} IS NULL",
+            settings?.BaseCurrency ?? "MYR");
     }
 
     private async Task SeedIfEmptyAsync()

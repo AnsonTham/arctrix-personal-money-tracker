@@ -39,6 +39,14 @@ public class TransactionRecord
 
     public decimal BaseAmount { get; set; }
 
+    /// <summary>
+    /// The base currency BaseAmount was computed in. The base currency can be changed later, so
+    /// period totals group and label amounts by this instead of today's setting. Rows saved
+    /// before this column existed are stamped on startup (see AppDbContext).
+    /// </summary>
+    [MaxLength(3)]
+    public string? BaseCurrencyAtEntry { get; set; }
+
     [Indexed]
     public DateTime Date { get; set; } = DateTime.Now;
 

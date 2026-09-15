@@ -106,8 +106,8 @@
                             <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource ChartIncome}" VerticalOptions="Center" />
                             <Label Text="Income" Style="{StaticResource Caption}" />
                         </HorizontalStackLayout>
-                        <Label Text="{Binding TotalIncome, StringFormat='{0:N2}'}" Style="{StaticResource AmountLarge}" />
-                        <Label Text="{Binding BaseCurrency}" Style="{StaticResource Caption}" />
+                        <Label Text="{Binding IncomeText}" Style="{StaticResource AmountLarge}" />
+                        <Label Text="{Binding IncomeCaption}" Style="{StaticResource Caption}" />
                     </VerticalStackLayout>
                 </Border>
 
@@ -117,16 +117,16 @@
                             <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" Color="{StaticResource ChartExpense}" VerticalOptions="Center" />
                             <Label Text="Spent" Style="{StaticResource Caption}" />
                         </HorizontalStackLayout>
-                        <Label Text="{Binding TotalExpense, StringFormat='{0:N2}'}" Style="{StaticResource AmountLarge}" />
-                        <Label Text="{Binding BaseCurrency}" Style="{StaticResource Caption}" />
+                        <Label Text="{Binding ExpenseText}" Style="{StaticResource AmountLarge}" />
+                        <Label Text="{Binding ExpenseCaption}" Style="{StaticResource Caption}" />
                     </VerticalStackLayout>
                 </Border>
 
                 <Border x:Name="KpiSaved" Grid.Column="2" Style="{StaticResource Card}">
                     <VerticalStackLayout Spacing="10">
                         <Label Text="{Binding SavedCaption}" Style="{StaticResource Caption}" />
-                        <Label Text="{Binding NetAmount, StringFormat='{0:N2}'}" Style="{StaticResource AmountLarge}" />
-                        <Label Text="{Binding BaseCurrency}" Style="{StaticResource Caption}" />
+                        <Label Text="{Binding SavedText}" Style="{StaticResource AmountLarge}" />
+                        <Label Text="{Binding SavedDetail}" Style="{StaticResource Caption}" />
                     </VerticalStackLayout>
                 </Border>
 
@@ -151,7 +151,7 @@
                                         <Span Text="6 months to " />
                                         <Span Text="{Binding MonthLabel}" />
                                         <Span Text=" · " />
-                                        <Span Text="{Binding BaseCurrency}" />
+                                        <Span Text="{Binding ChartCurrency}" />
                                     </FormattedString>
                                 </Label.FormattedText>
                             </Label>
@@ -172,8 +172,8 @@
 
                     <controls:FlowBarChart x:Name="FlowChart"
                                            HeightRequest="260"
-                                           Flows="{Binding Flows}"
-                                           ValuePrefix="{Binding BaseCurrency, StringFormat='{0} '}"
+                                           Flows="{Binding ChartFlows}"
+                                           ValuePrefix="{Binding ChartCurrency, StringFormat='{0} '}"
                                            IncomeColor="{StaticResource ChartIncome}"
                                            ExpenseColor="{StaticResource ChartExpense}"
                                            GridColor="{StaticResource Line}"
@@ -181,6 +181,7 @@
                                            ValueColor="{StaticResource TextPrimary}"
                                            TooltipColor="{StaticResource Surface2}"
                                            HoverColor="{StaticResource Surface2}" />
+                    <Label Text="{Binding ChartNote}" Style="{StaticResource Caption}" IsVisible="{Binding HasChartNote}" />
                 </VerticalStackLayout>
             </Border>
 
@@ -202,7 +203,7 @@
                                         <Label Grid.Column="2" VerticalOptions="Center">
                                             <Label.FormattedText>
                                                 <FormattedString>
-                                                    <Span Text="{Binding Amount, StringFormat='{0:N2}'}" FontFamily="InterSemiBold" TextColor="{StaticResource TextPrimary}" />
+                                                    <Span Text="{Binding AmountLabel}" FontFamily="InterSemiBold" TextColor="{StaticResource TextPrimary}" />
                                                     <Span Text="   " />
                                                     <Span Text="{Binding PercentOfTotal, StringFormat='{0:0}%'}" FontSize="12" TextColor="{StaticResource Muted}" />
                                                 </FormattedString>
@@ -237,11 +238,19 @@
 
                     <BoxView Style="{StaticResource Divider}" />
 
-                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Flows}">
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding TableRows}">
                         <BindableLayout.ItemTemplate>
                             <DataTemplate x:DataType="models:MonthlyFlow">
                                 <Grid ColumnDefinitions="2*,*,*,*" ColumnSpacing="12" Padding="0,9">
-                                    <Label Text="{Binding MonthStart, StringFormat='{0:MMM yyyy}'}" Style="{StaticResource BodyStrong}" />
+                                    <Label Style="{StaticResource BodyStrong}">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding MonthStart, StringFormat='{0:MMM yyyy}'}" FontFamily="InterMedium" />
+                                                <Span Text="  " />
+                                                <Span Text="{Binding Currency}" FontSize="11" TextColor="{StaticResource Muted}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
                                     <Label Grid.Column="1" Text="{Binding Income, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" FontFamily="InterRegular" />
                                     <Label Grid.Column="2" Text="{Binding Expense, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" FontFamily="InterRegular" />
                                     <Label Grid.Column="3" Text="{Binding Saved, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" />
