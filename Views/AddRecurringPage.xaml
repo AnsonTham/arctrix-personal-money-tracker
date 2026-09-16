@@ -21,6 +21,11 @@
                             <Setter Property="RowSpacing" Value="16" />
                             <Setter TargetName="Header" Property="Margin" Value="0,8,0,0" />
                             <Setter TargetName="FormCard" Property="Padding" Value="18" />
+                            <Setter TargetName="ActionsGrid" Property="Grid.ColumnDefinitions" Value="*" />
+                            <Setter TargetName="ActionsGrid" Property="Grid.RowDefinitions" Value="Auto,Auto" />
+                            <Setter TargetName="SaveButton" Property="Grid.Column" Value="0" />
+                            <Setter TargetName="CancelButton" Property="Grid.Column" Value="0" />
+                            <Setter TargetName="CancelButton" Property="Grid.Row" Value="1" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -151,9 +156,9 @@
 
                     <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorText}" IsVisible="{Binding HasError}" />
 
-                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
-                        <Button Grid.Column="1" Text="Cancel" Style="{StaticResource GhostButton}" Command="{Binding CancelCommand}" />
-                        <Button Grid.Column="2" Text="Add recurring payment" Command="{Binding SaveCommand}" />
+                    <Grid x:Name="ActionsGrid" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+                        <Button x:Name="CancelButton" Grid.Column="1" Text="Cancel" Style="{StaticResource GhostButton}" Command="{Binding CancelCommand}" />
+                        <Button x:Name="SaveButton" Grid.Column="2" Text="Add recurring payment" Command="{Binding SaveCommand}" />
                     </Grid>
 
                 </VerticalStackLayout>

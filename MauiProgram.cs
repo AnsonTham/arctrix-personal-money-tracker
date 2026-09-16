@@ -26,6 +26,10 @@ public static class MauiProgram
                 fonts.AddFont("Inter-Bold.ttf", "InterBold");
             });
 
+#if ANDROID
+        builder.ConfigureMauiHandlers(handlers => handlers.AddHandler<Shell, ArctrixShellRenderer>());
+#endif
+
         UseBorderlessInputs();
 
 #if DEBUG

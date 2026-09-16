@@ -13,6 +13,7 @@ public partial class AppShell : Shell
     private const double SidebarCollapseWidth = 900;
 
     private readonly bool _usesTabBar = DeviceInfo.Current.Idiom == DeviceIdiom.Phone;
+    private Window? _window;
 
     public AppShell()
     {
@@ -40,9 +41,44 @@ public partial class AppShell : Shell
         Items.Add(CreateSection("Recurring", "icon_recurring.png", Routes.Recurring, typeof(RecurringPage)));
         Items.Add(CreateSection("Reports", "icon_reports.png", Routes.Reports, typeof(ReportsPage)));
         Items.Add(CreateSection("Settings", "icon_settings.png", Routes.Settings, typeof(SettingsPage)));
-
-        SizeChanged += (_, _) => UpdateSidebarMode();
     }
+
+    // The sidebar mode follows the window: Shell's own SizeChanged is not raised on Windows, which
+    // left the sidebar locked open in narrow windows and squeezed pages into a sliver.
+    protected override void OnParentChanged()
+    {
+        base.OnParentChanged();
+        if (_usesTabBar)
+            return;
+
+        if (_window is not null)
+            _window.SizeChanged -= OnWindowSizeChanged;
+
+        _window = Parent as Window;
+        if (_window is not null)
+        {
+            _window.SizeChanged += OnWindowSizeChanged;
+            UpdateSidebarMode();
+        }
+    }
+
+    private void OnWindowSizeChanged(object? sender, EventArgs e) => UpdateSidebarMode();
+
+    /// <summary>
+    /// Selecting the section that is already open returns it to its main page, closing any form
+    /// pushed on top. Shell ignores a selection of the current item, so this is handled here.
+    /// </summary>
+    private async void OnSidebarItemTapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is not BindableObject { BindingContext: BaseShellItem tapped } || !IsCurrentSection(tapped))
+            return;
+
+        if (CurrentPage is Page page && page.Navigation.NavigationStack.Count > 1)
+            await page.Navigation.PopToRootAsync();
+    }
+
+    private bool IsCurrentSection(BaseShellItem item) =>
+        item == CurrentItem || item == CurrentItem?.CurrentItem || item == CurrentItem?.CurrentItem?.CurrentItem;
 
     private void BuildTabBar()
     {
@@ -83,10 +119,11 @@ public partial class AppShell : Shell
 
     private void UpdateSidebarMode()
     {
-        if (Width <= 0)
+        var width = _window?.Width ?? -1;
+        if (double.IsNaN(width) || width <= 0)
             return;
 
-        var mode = Width < SidebarCollapseWidth ? FlyoutBehavior.Flyout : FlyoutBehavior.Locked;
+        var mode = width < SidebarCollapseWidth ? FlyoutBehavior.Flyout : FlyoutBehavior.Locked;
         if (FlyoutBehavior == mode)
             return;
 

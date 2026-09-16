@@ -28,6 +28,9 @@
                   HeightRequest="48"
                   HorizontalOptions="Start"
                   SemanticProperties.Description="{Binding Title}">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnSidebarItemTapped" />
+                </Grid.GestureRecognizers>
                 <Border x:Name="Pill"
                         Background="Transparent"
                         StrokeThickness="0"
