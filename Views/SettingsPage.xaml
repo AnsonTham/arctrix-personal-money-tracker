@@ -45,7 +45,9 @@
                     </VerticalStackLayout>
 
                     <Border Style="{StaticResource InputShell}" WidthRequest="200" HorizontalOptions="Start">
-                        <Picker ItemsSource="{Binding SupportedCurrencies}" SelectedItem="{Binding BaseCurrency}" />
+                        <controls:PickerField>
+                            <Picker ItemsSource="{Binding SupportedCurrencies}" SelectedItem="{Binding BaseCurrency}" />
+                        </controls:PickerField>
                     </Border>
 
                     <HorizontalStackLayout Spacing="14">

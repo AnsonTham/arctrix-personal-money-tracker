@@ -78,7 +78,9 @@
                         <VerticalStackLayout Spacing="10">
                             <Label Text="Currency" Style="{StaticResource Overline}" />
                             <Border Style="{StaticResource InputShell}">
-                                <Picker ItemsSource="{Binding SupportedCurrencies}" SelectedItem="{Binding Currency}" />
+                                <controls:PickerField>
+                                    <Picker ItemsSource="{Binding SupportedCurrencies}" SelectedItem="{Binding Currency}" />
+                                </controls:PickerField>
                             </Border>
                         </VerticalStackLayout>
                         <VerticalStackLayout Grid.Column="1" Spacing="10">

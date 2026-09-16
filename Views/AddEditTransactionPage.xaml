@@ -28,6 +28,12 @@
                             <Setter TargetName="DateField" Property="Grid.Row" Value="2" />
                             <Setter TargetName="NotesField" Property="Grid.Row" Value="3" />
                             <Setter TargetName="NotesField" Property="Grid.Column" Value="0" />
+                            <!-- Stacked fields space themselves with margins: row spacing would leave a
+                                 double gap where the hidden "To account" row sits. -->
+                            <Setter TargetName="FieldsGrid" Property="Grid.RowSpacing" Value="0" />
+                            <Setter TargetName="FromField" Property="Margin" Value="0,0,0,22" />
+                            <Setter TargetName="ToField" Property="Margin" Value="0,0,0,22" />
+                            <Setter TargetName="DateField" Property="Margin" Value="0,0,0,22" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -81,13 +87,13 @@
                         <Label Text="Amount" Style="{StaticResource Overline}" />
                         <Border Style="{StaticResource InputShell}" Padding="16,4">
                             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                                <Picker ItemsSource="{Binding SupportedCurrencies}"
-                                        SelectedItem="{Binding CurrencyCode}"
-                                        FontFamily="InterSemiBold"
-                                        FontSize="17"
-                                        TextColor="{StaticResource Muted}"
-                                        WidthRequest="90"
-                                        VerticalOptions="Center" />
+                                <controls:PickerField WidthRequest="90" VerticalOptions="Center">
+                                    <Picker ItemsSource="{Binding SupportedCurrencies}"
+                                            SelectedItem="{Binding CurrencyCode}"
+                                            FontFamily="InterSemiBold"
+                                            FontSize="17"
+                                            TextColor="{StaticResource Muted}" />
+                                </controls:PickerField>
                                 <Entry Grid.Column="1"
                                        Text="{Binding AmountText}"
                                        Placeholder="0.00"
@@ -148,33 +154,39 @@
                         <VerticalStackLayout x:Name="FromField" Spacing="10">
                             <Label Text="{Binding AccountLabel}" Style="{StaticResource Overline}" />
                             <Border Style="{StaticResource InputShell}">
-                                <Picker Title="{OnPlatform Default='Choose account', WinUI={x:Null}}"
-                                        ItemsSource="{Binding Accounts}"
-                                        SelectedItem="{Binding SelectedAccount}">
-                                    <Picker.ItemDisplayBinding>
-                                        <Binding Path="Name" x:DataType="models:Account" />
-                                    </Picker.ItemDisplayBinding>
-                                </Picker>
+                                <controls:PickerField>
+                                    <Picker Title="{OnPlatform Default='Choose account', WinUI={x:Null}}"
+                                            ItemsSource="{Binding Accounts}"
+                                            SelectedItem="{Binding SelectedAccount}">
+                                        <Picker.ItemDisplayBinding>
+                                            <Binding Path="Name" x:DataType="models:Account" />
+                                        </Picker.ItemDisplayBinding>
+                                    </Picker>
+                                </controls:PickerField>
                             </Border>
                         </VerticalStackLayout>
 
                         <VerticalStackLayout x:Name="ToField" Grid.Column="1" Spacing="10" IsVisible="{Binding ShowToAccount}">
                             <Label Text="To account" Style="{StaticResource Overline}" />
                             <Border Style="{StaticResource InputShell}">
-                                <Picker Title="{OnPlatform Default='Choose account', WinUI={x:Null}}"
-                                        ItemsSource="{Binding Accounts}"
-                                        SelectedItem="{Binding SelectedToAccount}">
-                                    <Picker.ItemDisplayBinding>
-                                        <Binding Path="Name" x:DataType="models:Account" />
-                                    </Picker.ItemDisplayBinding>
-                                </Picker>
+                                <controls:PickerField>
+                                    <Picker Title="{OnPlatform Default='Choose account', WinUI={x:Null}}"
+                                            ItemsSource="{Binding Accounts}"
+                                            SelectedItem="{Binding SelectedToAccount}">
+                                        <Picker.ItemDisplayBinding>
+                                            <Binding Path="Name" x:DataType="models:Account" />
+                                        </Picker.ItemDisplayBinding>
+                                    </Picker>
+                                </controls:PickerField>
                             </Border>
                         </VerticalStackLayout>
 
                         <VerticalStackLayout x:Name="DateField" Grid.Row="1" Spacing="10">
                             <Label Text="Date" Style="{StaticResource Overline}" />
                             <Border Style="{StaticResource InputShell}">
-                                <DatePicker Date="{Binding Date}" Format="d MMM yyyy" />
+                                <controls:PickerField Glyph="icon_calendar.png">
+                                    <DatePicker Date="{Binding Date}" Format="d MMM yyyy" />
+                                </controls:PickerField>
                             </Border>
                         </VerticalStackLayout>
 

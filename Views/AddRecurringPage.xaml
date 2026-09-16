@@ -88,7 +88,9 @@
                         <VerticalStackLayout Grid.Column="1" Spacing="10">
                             <Label Text="Day of month" Style="{StaticResource Overline}" />
                             <Border Style="{StaticResource InputShell}">
-                                <Picker ItemsSource="{Binding DaysOfMonth}" SelectedItem="{Binding DayOfMonth}" />
+                                <controls:PickerField>
+                                    <Picker ItemsSource="{Binding DaysOfMonth}" SelectedItem="{Binding DayOfMonth}" />
+                                </controls:PickerField>
                             </Border>
                         </VerticalStackLayout>
                     </Grid>
@@ -96,13 +98,15 @@
                     <VerticalStackLayout Spacing="10">
                         <Label Text="Account" Style="{StaticResource Overline}" />
                         <Border Style="{StaticResource InputShell}">
-                            <Picker Title="{OnPlatform Default='Choose account', WinUI={x:Null}}"
-                                    ItemsSource="{Binding Accounts}"
-                                    SelectedItem="{Binding SelectedAccount}">
-                                <Picker.ItemDisplayBinding>
-                                    <Binding Path="Name" x:DataType="models:Account" />
-                                </Picker.ItemDisplayBinding>
-                            </Picker>
+                            <controls:PickerField>
+                                <Picker Title="{OnPlatform Default='Choose account', WinUI={x:Null}}"
+                                        ItemsSource="{Binding Accounts}"
+                                        SelectedItem="{Binding SelectedAccount}">
+                                    <Picker.ItemDisplayBinding>
+                                        <Binding Path="Name" x:DataType="models:Account" />
+                                    </Picker.ItemDisplayBinding>
+                                </Picker>
+                            </controls:PickerField>
                         </Border>
                     </VerticalStackLayout>
 
