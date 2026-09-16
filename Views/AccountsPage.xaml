@@ -32,6 +32,12 @@
                         <Setter TargetName="SummaryCard" Property="Grid.Row" Value="1" />
                         <Setter TargetName="SummaryCard" Property="Grid.Column" Value="0" />
                         <Setter TargetName="AccountList" Property="Grid.Row" Value="2" />
+
+                        <!-- Keep the summary to the total on phones so the account list gets the screen;
+                             each card already shows its own balance. -->
+                        <Setter TargetName="SummaryCard" Property="Padding" Value="16" />
+                        <Setter TargetName="SummaryDivider" Property="IsVisible" Value="False" />
+                        <Setter TargetName="Breakdown" Property="IsVisible" Value="False" />
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
@@ -62,8 +68,8 @@
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:Account">
                     <Border Style="{StaticResource Card}">
-                        <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="16">
-                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Grid RowDefinitions="Auto,Auto" RowSpacing="12">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
                                 <Border Style="{StaticResource IconTile}">
                                     <BoxView WidthRequest="12"
                                              HeightRequest="12"
@@ -74,15 +80,36 @@
                                 </Border>
                                 <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
                                     <Label Text="{Binding Name}" Style="{StaticResource BodyStrong}" MaxLines="1" LineBreakMode="TailTruncation" />
-                                    <Label Text="{Binding Type, Converter={StaticResource AccountTypeLabel}}" Style="{StaticResource Caption}" />
+                                    <Label Style="{StaticResource Caption}" MaxLines="1" LineBreakMode="TailTruncation">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding Type, Converter={StaticResource AccountTypeLabel}}" />
+                                                <Span Text="{Binding CreatedAt, StringFormat=' · Added {0:d MMM yyyy}'}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
                                 </VerticalStackLayout>
-                                <Button Grid.Column="2"
+                            </Grid>
+
+                            <!-- Archive sits beside the balance so the name and subtitle keep the full width. -->
+                            <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <Label Style="{StaticResource AmountLarge}" VerticalOptions="Center">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding Currency}" FontSize="14" FontFamily="InterSemiBold" TextColor="{StaticResource Muted}" />
+                                            <Span Text=" " />
+                                            <Span Text="{Binding Balance, StringFormat='{0:N2}'}" FontFamily="InterBold" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                                <Button Grid.Column="1"
                                         Text="Archive"
                                         Style="{StaticResource GhostButton}"
                                         FontSize="13"
                                         MinimumWidthRequest="48"
                                         Padding="12,0"
                                         VerticalOptions="Center"
+                                        SemanticProperties.Description="{Binding Name, StringFormat='Archive {0}'}"
                                         CommandParameter="{Binding .}">
                                     <Button.Command>
                                         <Binding Path="ArchiveCommand"
@@ -91,20 +118,6 @@
                                     </Button.Command>
                                 </Button>
                             </Grid>
-
-                            <Label Grid.Row="1" Style="{StaticResource AmountLarge}">
-                                <Label.FormattedText>
-                                    <FormattedString>
-                                        <Span Text="{Binding Currency}" FontSize="14" FontFamily="InterSemiBold" TextColor="{StaticResource Muted}" />
-                                        <Span Text=" " />
-                                        <Span Text="{Binding Balance, StringFormat='{0:N2}'}" FontFamily="InterBold" />
-                                    </FormattedString>
-                                </Label.FormattedText>
-                            </Label>
-
-                            <Label Grid.Row="2"
-                                   Text="{Binding CreatedAt, StringFormat='Added {0:d MMM yyyy}'}"
-                                   Style="{StaticResource Caption}" />
                         </Grid>
                     </Border>
                 </DataTemplate>
@@ -140,9 +153,9 @@
                     </Label>
                 </VerticalStackLayout>
 
-                <BoxView Style="{StaticResource Divider}" />
+                <BoxView x:Name="SummaryDivider" Style="{StaticResource Divider}" />
 
-                <VerticalStackLayout Spacing="14" BindableLayout.ItemsSource="{Binding Breakdown}">
+                <VerticalStackLayout x:Name="Breakdown" Spacing="14" BindableLayout.ItemsSource="{Binding Breakdown}">
                     <BindableLayout.ItemTemplate>
                         <DataTemplate x:DataType="models:BalanceShare">
                             <VerticalStackLayout Spacing="7">
