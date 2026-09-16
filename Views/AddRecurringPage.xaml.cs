@@ -3,7 +3,7 @@ using Arctrix.PersonalMoneyTracker.ViewModels;
 
 namespace Arctrix.PersonalMoneyTracker.Views;
 
-public partial class AddRecurringPage : ContentPage
+public partial class AddRecurringPage : AppPage
 {
     private const double FormMaxWidth = 640;
 

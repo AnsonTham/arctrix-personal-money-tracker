@@ -3,7 +3,7 @@ using Arctrix.PersonalMoneyTracker.ViewModels;
 
 namespace Arctrix.PersonalMoneyTracker.Views;
 
-public partial class RecurringPage : ContentPage
+public partial class RecurringPage : AppPage
 {
     private readonly RecurringViewModel _viewModel;
 

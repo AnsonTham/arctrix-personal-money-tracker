@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+<views:AppPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:views="clr-namespace:Arctrix.PersonalMoneyTracker.Views"
+             xmlns:controls="clr-namespace:Arctrix.PersonalMoneyTracker.Controls"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Arctrix.PersonalMoneyTracker.ViewModels"
              x:Class="Arctrix.PersonalMoneyTracker.Views.RecurringPage"
@@ -35,12 +37,13 @@
         </VisualStateManager.VisualStateGroups>
 
         <!-- Header -->
-        <Grid x:Name="Header" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto">
-            <VerticalStackLayout Spacing="4" VerticalOptions="Center">
+        <Grid x:Name="Header" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto">
+            <controls:BackButton />
+            <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
                 <Label Text="{Binding Title}" Style="{StaticResource H1}" />
                 <Label Text="{Binding CountLabel}" Style="{StaticResource Body}" />
             </VerticalStackLayout>
-            <Button Grid.Column="1"
+            <Button Grid.Column="2"
                     Text="Add recurring"
                     VerticalOptions="Center"
                     Command="{Binding AddRecurringCommand}" />
@@ -165,4 +168,4 @@
 
     </Grid>
 
-</ContentPage>
+</views:AppPage>

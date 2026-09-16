@@ -3,7 +3,7 @@ using Arctrix.PersonalMoneyTracker.ViewModels;
 
 namespace Arctrix.PersonalMoneyTracker.Views;
 
-public partial class SettingsPage : ContentPage
+public partial class SettingsPage : AppPage
 {
     private const double ContentMaxWidth = 760;
 

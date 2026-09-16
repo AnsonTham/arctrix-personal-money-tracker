@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-                    xmlns:helpers="clr-namespace:Arctrix.PersonalMoneyTracker.Helpers">
+                    xmlns:helpers="clr-namespace:Arctrix.PersonalMoneyTracker.Helpers"
+                    xmlns:controls="clr-namespace:Arctrix.PersonalMoneyTracker.Controls">
 
     <!-- Shared value converters -->
     <helpers:HexColorConverter x:Key="HexColor" />
@@ -325,6 +326,17 @@
                 </VisualStateGroup>
             </VisualStateGroupList>
         </Setter>
+    </Style>
+
+    <!-- In-page back button for pushed pages; hidden unless AppPage.ShowBackButton is set. -->
+    <Style TargetType="controls:BackButton" BasedOn="{StaticResource SecondaryButton}">
+        <Setter Property="ImageSource" Value="icon_back.png" />
+        <Setter Property="WidthRequest" Value="48" />
+        <Setter Property="HeightRequest" Value="48" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="VerticalOptions" Value="Center" />
+        <Setter Property="Margin" Value="0,0,14,0" />
     </Style>
 
     <!-- ============================ Inputs ============================ -->

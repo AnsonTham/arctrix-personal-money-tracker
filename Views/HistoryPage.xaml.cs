@@ -3,7 +3,7 @@ using Arctrix.PersonalMoneyTracker.ViewModels;
 
 namespace Arctrix.PersonalMoneyTracker.Views;
 
-public partial class HistoryPage : ContentPage
+public partial class HistoryPage : AppPage
 {
     private readonly HistoryViewModel _viewModel;
 

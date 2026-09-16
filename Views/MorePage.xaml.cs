@@ -2,7 +2,7 @@ using Arctrix.PersonalMoneyTracker.ViewModels;
 
 namespace Arctrix.PersonalMoneyTracker.Views;
 
-public partial class MorePage : ContentPage
+public partial class MorePage : AppPage
 {
     public MorePage(MoreViewModel viewModel)
     {

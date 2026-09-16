@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+<views:AppPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:views="clr-namespace:Arctrix.PersonalMoneyTracker.Views"
+             xmlns:controls="clr-namespace:Arctrix.PersonalMoneyTracker.Controls"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Arctrix.PersonalMoneyTracker.ViewModels"
              x:Class="Arctrix.PersonalMoneyTracker.Views.SettingsPage"
@@ -25,10 +27,13 @@
                 </VisualStateGroup>
             </VisualStateManager.VisualStateGroups>
 
-            <VerticalStackLayout x:Name="Header" Spacing="4">
-                <Label Text="{Binding Title}" Style="{StaticResource H1}" />
-                <Label Text="Currency and app information" Style="{StaticResource Body}" />
-            </VerticalStackLayout>
+            <Grid x:Name="Header" ColumnDefinitions="Auto,*">
+                <controls:BackButton />
+                <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                    <Label Text="{Binding Title}" Style="{StaticResource H1}" />
+                    <Label Text="Currency and app information" Style="{StaticResource Body}" />
+                </VerticalStackLayout>
+            </Grid>
 
             <!-- Base currency -->
             <Border Style="{StaticResource Card}" Padding="24">
@@ -94,4 +99,4 @@
         </VerticalStackLayout>
     </ScrollView>
 
-</ContentPage>
+</views:AppPage>

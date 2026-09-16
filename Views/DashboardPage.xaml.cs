@@ -3,7 +3,7 @@ using Arctrix.PersonalMoneyTracker.ViewModels;
 
 namespace Arctrix.PersonalMoneyTracker.Views;
 
-public partial class DashboardPage : ContentPage
+public partial class DashboardPage : AppPage
 {
     private readonly DashboardViewModel _viewModel;
 

@@ -3,7 +3,7 @@ using Arctrix.PersonalMoneyTracker.ViewModels;
 
 namespace Arctrix.PersonalMoneyTracker.Views;
 
-public partial class AddAccountPage : ContentPage
+public partial class AddAccountPage : AppPage
 {
     private const double FormMaxWidth = 640;
 

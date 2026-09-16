@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+<views:AppPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:views="clr-namespace:Arctrix.PersonalMoneyTracker.Views"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Arctrix.PersonalMoneyTracker.ViewModels"
              xmlns:helpers="clr-namespace:Arctrix.PersonalMoneyTracker.Helpers"
@@ -83,4 +84,4 @@
         </VerticalStackLayout>
     </ScrollView>
 
-</ContentPage>
+</views:AppPage>
