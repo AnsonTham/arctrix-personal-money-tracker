@@ -68,40 +68,44 @@
                                 </VisualStateGroupList>
                             </VisualStateManager.VisualStateGroups>
 
-                            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="14">
-                                <Border Style="{StaticResource IconTile}">
+                            <!-- Name and amount on top; the schedule gets the full text width so it never
+                                 truncates; due date and Stop share the last row, away from the amount. -->
+                            <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="2">
+                                <Border Grid.RowSpan="2" Style="{StaticResource IconTile}" VerticalOptions="Start">
                                     <Image Source="{Binding CategoryIconFile}" WidthRequest="20" HeightRequest="20" HorizontalOptions="Center" VerticalOptions="Center" />
                                 </Border>
 
-                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
-                                    <Label Text="{Binding Name}" Style="{StaticResource BodyStrong}" MaxLines="1" LineBreakMode="TailTruncation" />
-                                    <Label Text="{Binding ScheduleLabel}" Style="{StaticResource Caption}" MaxLines="1" LineBreakMode="TailTruncation" />
-                                </VerticalStackLayout>
+                                <Label Grid.Column="1" Text="{Binding Name}" Style="{StaticResource BodyStrong}" MaxLines="1" LineBreakMode="TailTruncation" VerticalOptions="Center" />
 
-                                <VerticalStackLayout Grid.Column="2" Spacing="2" VerticalOptions="Center">
-                                    <Label Text="{Binding AmountLabel}" Style="{StaticResource Amount}">
-                                        <Label.Triggers>
-                                            <DataTrigger TargetType="Label" Binding="{Binding IsIncome}" Value="True">
-                                                <Setter Property="TextColor" Value="{StaticResource Positive}" />
-                                            </DataTrigger>
-                                        </Label.Triggers>
-                                    </Label>
-                                    <Label Text="{Binding DueLabel}" Style="{StaticResource Caption}" HorizontalTextAlignment="End">
-                                        <Label.Triggers>
-                                            <DataTrigger TargetType="Label" Binding="{Binding IsOverdue}" Value="True">
-                                                <Setter Property="TextColor" Value="{StaticResource Negative}" />
-                                            </DataTrigger>
-                                        </Label.Triggers>
-                                    </Label>
-                                </VerticalStackLayout>
+                                <Label Grid.Column="2" Text="{Binding AmountLabel}" Style="{StaticResource Amount}" VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsIncome}" Value="True">
+                                            <Setter Property="TextColor" Value="{StaticResource Positive}" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
 
-                                <Button Grid.Column="3"
+                                <Label Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding ScheduleLabel}" Style="{StaticResource Caption}" />
+
+                                <Label Grid.Row="2" Grid.Column="1" Text="{Binding DueLabel}" Style="{StaticResource Caption}" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsOverdue}" Value="True">
+                                            <Setter Property="TextColor" Value="{StaticResource Negative}" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+
+                                <Button Grid.Row="2"
+                                        Grid.Column="2"
                                         Text="Stop"
-                                        Style="{StaticResource GhostButton}"
+                                        Style="{StaticResource SecondaryButton}"
                                         FontSize="13"
                                         MinimumWidthRequest="48"
-                                        Padding="12,0"
+                                        Padding="14,0"
+                                        Margin="0,6,0,0"
+                                        HorizontalOptions="End"
                                         VerticalOptions="Center"
+                                        SemanticProperties.Description="{Binding Name, StringFormat='Stop {0}'}"
                                         CommandParameter="{Binding .}">
                                     <Button.Command>
                                         <Binding Path="StopCommand"
