@@ -74,6 +74,7 @@ public partial class HistoryViewModel : ViewModelBase
                     t,
                     categories.GetValueOrDefault(t.CategoryId),
                     accounts.GetValueOrDefault(t.AccountId),
+                    t.ToAccountId is int toId ? accounts.GetValueOrDefault(toId) : null,
                     BaseCurrency))
                 .ToList();
 

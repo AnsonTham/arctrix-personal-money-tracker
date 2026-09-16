@@ -221,7 +221,7 @@
 
                                     <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
                                         <Label Text="{Binding CategoryName}" Style="{StaticResource BodyStrong}" />
-                                        <Label Text="{Binding Subtitle}" Style="{StaticResource Caption}" MaxLines="1" LineBreakMode="TailTruncation" />
+                                        <Label Text="{Binding Subtitle}" Style="{StaticResource Caption}" MaxLines="2" LineBreakMode="WordWrap" />
                                     </VerticalStackLayout>
 
                                     <VerticalStackLayout Grid.Column="2" Spacing="2" VerticalOptions="Center">

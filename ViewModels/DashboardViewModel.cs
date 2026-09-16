@@ -128,14 +128,16 @@ public partial class DashboardViewModel : ViewModelBase
 
             var recent = await _transactions.GetRecentAsync(RecentCount);
             var categories = (await _categories.GetAllAsync(includeArchived: true)).ToDictionary(c => c.Id);
-            var accountsById = accounts.ToDictionary(a => a.Id);
+            // Include archived accounts: recent rows may still name them.
+            var accountsById = (await _accounts.GetAllAsync(includeArchived: true)).ToDictionary(a => a.Id);
 
             RecentTransactions.Clear();
             foreach (var t in recent)
             {
                 categories.TryGetValue(t.CategoryId, out var category);
                 accountsById.TryGetValue(t.AccountId, out var account);
-                RecentTransactions.Add(TransactionRowViewModel.From(t, category, account, BaseCurrency));
+                var toAccount = t.ToAccountId is int toId ? accountsById.GetValueOrDefault(toId) : null;
+                RecentTransactions.Add(TransactionRowViewModel.From(t, category, account, toAccount, BaseCurrency));
             }
             ShowRecentEmptyState = RecentTransactions.Count == 0;
         }
