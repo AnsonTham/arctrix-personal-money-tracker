@@ -79,9 +79,9 @@
                                 <Button Grid.Column="2"
                                         Text="Archive"
                                         Style="{StaticResource GhostButton}"
-                                        FontSize="12"
-                                        MinimumHeightRequest="32"
-                                        Padding="10,0"
+                                        FontSize="13"
+                                        MinimumWidthRequest="48"
+                                        Padding="12,0"
                                         VerticalOptions="Center"
                                         CommandParameter="{Binding .}">
                                     <Button.Command>

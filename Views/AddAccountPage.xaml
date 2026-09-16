@@ -61,7 +61,7 @@
                                                 <Setter Property="Stroke" Value="{StaticResource AccentBrush}" />
                                             </DataTrigger>
                                         </Border.Triggers>
-                                        <Label Text="{Binding Label}" FontFamily="InterMedium" FontSize="13" TextColor="{StaticResource TextSecondary}">
+                                        <Label Text="{Binding Label}" FontFamily="InterMedium" FontSize="13" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center">
                                             <Label.Triggers>
                                                 <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
                                                     <Setter Property="TextColor" Value="{StaticResource Accent}" />

@@ -189,7 +189,6 @@
                         <Button Grid.Column="1"
                                 Text="View all"
                                 Style="{StaticResource GhostButton}"
-                                MinimumHeightRequest="36"
                                 Padding="12,0"
                                 Command="{Binding ViewAllTransactionsCommand}" />
                     </Grid>
@@ -251,7 +250,6 @@
                         <Button Grid.Column="1"
                                 Text="Analytics"
                                 Style="{StaticResource GhostButton}"
-                                MinimumHeightRequest="36"
                                 Padding="12,0"
                                 Command="{Binding ViewAnalyticsCommand}" />
                     </Grid>
@@ -296,7 +294,6 @@
                         <Button Grid.Column="1"
                                 Text="+ Add"
                                 Style="{StaticResource GhostButton}"
-                                MinimumHeightRequest="36"
                                 Padding="12,0"
                                 Command="{Binding QuickAddAccountCommand}" />
                     </Grid>

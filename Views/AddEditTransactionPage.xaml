@@ -63,7 +63,7 @@
                                                 <Setter Property="Stroke" Value="{StaticResource AccentBrush}" />
                                             </DataTrigger>
                                         </Border.Triggers>
-                                        <Label Text="{Binding Name}" FontFamily="InterMedium" FontSize="13" TextColor="{StaticResource TextSecondary}">
+                                        <Label Text="{Binding Name}" FontFamily="InterMedium" FontSize="13" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center">
                                             <Label.Triggers>
                                                 <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
                                                     <Setter Property="TextColor" Value="{StaticResource Accent}" />
@@ -122,7 +122,7 @@
                                                 <Setter Property="Stroke" Value="{StaticResource AccentBrush}" />
                                             </DataTrigger>
                                         </Border.Triggers>
-                                        <HorizontalStackLayout Spacing="8">
+                                        <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
                                             <Image Source="{Binding Category.IconFile}" WidthRequest="18" HeightRequest="18" VerticalOptions="Center" />
                                             <Label Text="{Binding Category.Name}" FontFamily="InterMedium" FontSize="13" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center">
                                                 <Label.Triggers>
