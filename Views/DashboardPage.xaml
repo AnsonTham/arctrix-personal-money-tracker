@@ -41,7 +41,13 @@
                             <Setter TargetName="QuickActions" Property="Grid.Row" Value="2" />
                             <Setter TargetName="QuickActions" Property="Grid.Column" Value="0" />
                             <Setter TargetName="QuickActions" Property="HorizontalOptions" Value="Fill" />
-                            <Setter TargetName="QuickActions" Property="Grid.ColumnDefinitions" Value="*,*,*" />
+                            <Setter TargetName="QuickActions" Property="Grid.ColumnDefinitions" Value="*,*" />
+                            <Setter TargetName="QuickActions" Property="Grid.RowDefinitions" Value="Auto,Auto" />
+                            <Setter TargetName="AddExpenseButton" Property="Grid.Row" Value="0" />
+                            <Setter TargetName="AddExpenseButton" Property="Grid.Column" Value="0" />
+                            <Setter TargetName="AddExpenseButton" Property="Grid.ColumnSpan" Value="2" />
+                            <Setter TargetName="TransferButton" Property="Grid.Row" Value="1" />
+                            <Setter TargetName="IncomeButton" Property="Grid.Row" Value="1" />
 
                             <Setter TargetName="StatsGrid" Property="Grid.Row" Value="3" />
                             <Setter TargetName="StatsGrid" Property="Grid.Column" Value="0" />
@@ -70,11 +76,13 @@
                   Grid.Column="1"
                   ColumnDefinitions="Auto,Auto,Auto"
                   ColumnSpacing="10"
+                  RowSpacing="10"
                   HorizontalOptions="End"
                   VerticalOptions="Center">
-                <Button Text="Transfer" Style="{StaticResource SecondaryButton}" Command="{Binding QuickAddTransferCommand}" />
-                <Button Grid.Column="1" Text="Income" Style="{StaticResource SecondaryButton}" Command="{Binding QuickAddIncomeCommand}" />
-                <Button Grid.Column="2" Text="Add expense" Command="{Binding QuickAddExpenseCommand}" />
+                <!-- Narrow widths give the primary action its own full-width row so its label never truncates. -->
+                <Button x:Name="TransferButton" Text="Transfer" Style="{StaticResource SecondaryButton}" Command="{Binding QuickAddTransferCommand}" />
+                <Button x:Name="IncomeButton" Grid.Column="1" Text="Income" Style="{StaticResource SecondaryButton}" Command="{Binding QuickAddIncomeCommand}" />
+                <Button x:Name="AddExpenseButton" Grid.Column="2" Text="Add expense" Command="{Binding QuickAddExpenseCommand}" />
             </Grid>
 
             <!-- Net worth hero -->
