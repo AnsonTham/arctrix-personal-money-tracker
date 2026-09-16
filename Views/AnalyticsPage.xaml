@@ -47,6 +47,8 @@
                             <Setter TargetName="SpendingCard" Property="Grid.Row" Value="3" />
                             <Setter TargetName="SpendingCard" Property="Grid.Column" Value="0" />
                             <Setter TargetName="TableCard" Property="Grid.Row" Value="4" />
+                            <Setter TargetName="TableWide" Property="IsVisible" Value="False" />
+                            <Setter TargetName="TableNarrow" Property="IsVisible" Value="True" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -230,32 +232,75 @@
                 <VerticalStackLayout Spacing="10">
                     <Label Text="Monthly breakdown" Style="{StaticResource H2}" Margin="0,0,0,6" />
 
-                    <Grid ColumnDefinitions="2*,*,*,*" ColumnSpacing="12">
-                        <Label Text="Month" Style="{StaticResource Overline}" />
-                        <Label Grid.Column="1" Text="Income" Style="{StaticResource Overline}" HorizontalTextAlignment="End" />
-                        <Label Grid.Column="2" Text="Spent" Style="{StaticResource Overline}" HorizontalTextAlignment="End" />
-                        <Label Grid.Column="3" Text="Saved" Style="{StaticResource Overline}" HorizontalTextAlignment="End" />
-                    </Grid>
+                    <!-- Four-column table; too tight for phones, which get the stacked rows below. -->
+                    <VerticalStackLayout x:Name="TableWide" Spacing="10">
+                        <Grid ColumnDefinitions="2*,*,*,*" ColumnSpacing="12">
+                            <Label Text="Month" Style="{StaticResource Overline}" />
+                            <Label Grid.Column="1" Text="Income" Style="{StaticResource Overline}" HorizontalTextAlignment="End" />
+                            <Label Grid.Column="2" Text="Spent" Style="{StaticResource Overline}" HorizontalTextAlignment="End" />
+                            <Label Grid.Column="3" Text="Saved" Style="{StaticResource Overline}" HorizontalTextAlignment="End" />
+                        </Grid>
 
-                    <BoxView Style="{StaticResource Divider}" />
+                        <BoxView Style="{StaticResource Divider}" />
 
-                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding TableRows}">
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding TableRows}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:MonthlyFlow">
+                                    <Grid ColumnDefinitions="2*,*,*,*" ColumnSpacing="12" Padding="0,9">
+                                        <Label Style="{StaticResource BodyStrong}">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding MonthStart, StringFormat='{0:MMM yyyy}'}" FontFamily="InterMedium" />
+                                                    <Span Text="  " />
+                                                    <Span Text="{Binding Currency}" FontSize="11" TextColor="{StaticResource Muted}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                        <Label Grid.Column="1" Text="{Binding Income, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" FontFamily="InterRegular" />
+                                        <Label Grid.Column="2" Text="{Binding Expense, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" FontFamily="InterRegular" />
+                                        <Label Grid.Column="3" Text="{Binding Saved, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+
+                    <!-- Stacked rows for narrow widths: month and saved on top, income and spent beneath. -->
+                    <VerticalStackLayout x:Name="TableNarrow" IsVisible="False" BindableLayout.ItemsSource="{Binding TableRows}">
                         <BindableLayout.ItemTemplate>
                             <DataTemplate x:DataType="models:MonthlyFlow">
-                                <Grid ColumnDefinitions="2*,*,*,*" ColumnSpacing="12" Padding="0,9">
-                                    <Label Style="{StaticResource BodyStrong}">
-                                        <Label.FormattedText>
-                                            <FormattedString>
-                                                <Span Text="{Binding MonthStart, StringFormat='{0:MMM yyyy}'}" FontFamily="InterMedium" />
-                                                <Span Text="  " />
-                                                <Span Text="{Binding Currency}" FontSize="11" TextColor="{StaticResource Muted}" />
-                                            </FormattedString>
-                                        </Label.FormattedText>
-                                    </Label>
-                                    <Label Grid.Column="1" Text="{Binding Income, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" FontFamily="InterRegular" />
-                                    <Label Grid.Column="2" Text="{Binding Expense, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" FontFamily="InterRegular" />
-                                    <Label Grid.Column="3" Text="{Binding Saved, StringFormat='{0:N2}'}" Style="{StaticResource Amount}" />
-                                </Grid>
+                                <VerticalStackLayout>
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="4" Padding="0,12">
+                                        <Label Style="{StaticResource BodyStrong}" VerticalOptions="Center">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding MonthStart, StringFormat='{0:MMM yyyy}'}" FontFamily="InterMedium" />
+                                                    <Span Text="  " />
+                                                    <Span Text="{Binding Currency}" FontSize="11" TextColor="{StaticResource Muted}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                        <Label Grid.Column="1" Style="{StaticResource Amount}" VerticalOptions="Center">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="Saved  " FontFamily="InterRegular" FontSize="12" TextColor="{StaticResource Muted}" />
+                                                    <Span Text="{Binding Saved, StringFormat='{0:N2}'}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                        <Label Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource Caption}">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="Income " />
+                                                    <Span Text="{Binding Income, StringFormat='{0:N2}'}" TextColor="{StaticResource TextSecondary}" />
+                                                    <Span Text="   ·   Spent " />
+                                                    <Span Text="{Binding Expense, StringFormat='{0:N2}'}" TextColor="{StaticResource TextSecondary}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </Grid>
+                                    <BoxView Style="{StaticResource Divider}" />
+                                </VerticalStackLayout>
                             </DataTemplate>
                         </BindableLayout.ItemTemplate>
                     </VerticalStackLayout>
