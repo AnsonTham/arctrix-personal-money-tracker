@@ -10,9 +10,9 @@
 
     <Shell.FlyoutHeader>
         <Grid Padding="22,30,22,22" ColumnDefinitions="Auto,*" ColumnSpacing="12">
-            <Image Source="arctrix_mark.png"
-                   WidthRequest="36"
-                   HeightRequest="32"
+            <Image Source="arctrix_wallet_mark.png"
+                   WidthRequest="40"
+                   HeightRequest="40"
                    VerticalOptions="Center" />
             <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="0">
                 <Label Text="Arctrix" Style="{StaticResource H3}" FontSize="17" />
@@ -71,7 +71,7 @@
     </Shell.ItemTemplate>
 
     <Shell.FlyoutFooter>
-        <Label Text="Arctrix Solutions"
+        <Label Text="Arctrix"
                Style="{StaticResource Caption}"
                TextColor="{StaticResource TextFaint}"
                Margin="24,16,24,24" />

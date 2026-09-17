@@ -88,7 +88,7 @@
             <!-- About -->
             <Border Style="{StaticResource Card}" Padding="24">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
-                    <Image Source="arctrix_mark.png" WidthRequest="40" HeightRequest="36" VerticalOptions="Start" />
+                    <Image Source="arctrix_wallet_mark.png" WidthRequest="40" HeightRequest="40" VerticalOptions="Start" />
                     <VerticalStackLayout Grid.Column="1" Spacing="6">
                         <Label Text="Arctrix Personal Money Tracker" Style="{StaticResource H3}" />
                         <Label Text="{Binding AppVersion}" Style="{StaticResource Caption}" />

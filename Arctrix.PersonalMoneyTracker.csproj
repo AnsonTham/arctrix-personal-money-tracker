@@ -28,16 +28,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- App icon: dark tile with the Arctrix mark layered on top -->
-    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.png" ForegroundScale="0.6" Color="#080A0E" />
+    <!-- App icon (also the Windows exe/taskbar icon): dark tile with the wallet mark layered on top.
+         Android launchers mask icons to a circle or squircle, so the mark is scaled down there to stay
+         inside the adaptive-icon safe zone; unmasked icons (Windows taskbar) keep it large. -->
+    <MauiIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'"
+              Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\Images\arctrix_wallet_mark.png" ForegroundScale="0.5" Color="#080A0E" />
+    <MauiIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'android'"
+              Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\Images\arctrix_wallet_mark.png" ForegroundScale="0.8" Color="#080A0E" />
 
-    <!-- Splash screen -->
-    <MauiSplashScreen Include="Resources\Splash\splash.png" Color="#080A0E" BaseSize="160,144" />
+    <!-- Splash screen: the wallet mark on the app background. A separate copy, because a splash
+         and an in-app image built from the same file would produce clashing Android resources. -->
+    <MauiSplashScreen Include="Resources\Splash\splash.png" Color="#080A0E" BaseSize="160,160" />
 
     <!-- In-app images. BaseSize is the 1x size; higher densities are generated from the source. -->
     <MauiImage Include="Resources\Images\*" />
-    <MauiImage Update="Resources\Images\arctrix_mark.png" BaseSize="40,36" />
-    <MauiImage Update="Resources\Images\arctrix_logo.png" BaseSize="120,120" />
+    <MauiImage Update="Resources\Images\arctrix_wallet_mark.png" BaseSize="48,48" />
 
     <!-- Inter (SIL OFL, see ThirdPartyNotices) -->
     <MauiFont Include="Resources\Fonts\*" />
