@@ -160,6 +160,10 @@ public partial class DashboardViewModel : ViewModelBase
     private Task QuickAddAccount() => Shell.Current.GoToAsync(Routes.AddAccount);
 
     [RelayCommand]
+    private Task ScanReceipt() =>
+        ReceiptScanning.IsSupported ? Shell.Current.GoToAsync(Routes.ScanReceipt) : Task.CompletedTask;
+
+    [RelayCommand]
     private Task ViewAllTransactions() => AppNavigation.GoToSectionAsync(Routes.History);
 
     [RelayCommand]

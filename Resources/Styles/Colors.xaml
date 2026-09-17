@@ -52,6 +52,7 @@
     <SolidColorBrush x:Key="AccentSoftBrush" Color="{StaticResource AccentSoft}" />
     <SolidColorBrush x:Key="PositiveBrush" Color="{StaticResource Positive}" />
     <SolidColorBrush x:Key="NegativeBrush" Color="{StaticResource Negative}" />
+    <SolidColorBrush x:Key="NegativeSoftBrush" Color="{StaticResource NegativeSoft}" />
 
     <!-- Restrained gradients -->
     <LinearGradientBrush x:Key="HeroBrush" StartPoint="0,0" EndPoint="1,1">

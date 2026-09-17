@@ -66,5 +66,13 @@ public class TransactionRecord
     /// <summary>Set when this row was generated automatically from a RecurringPayment.</summary>
     public int? RecurringPaymentId { get; set; }
 
+    /// <summary>
+    /// Photo of the receipt this transaction was scanned from, relative to the app data folder
+    /// (see ReceiptPhotoStore); null when there is none. Added as a nullable column, so existing
+    /// rows are unaffected.
+    /// </summary>
+    [MaxLength(260)]
+    public string? ReceiptImagePath { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 }

@@ -19,7 +19,7 @@ public interface ITransactionService
     /// <summary>Reverses the stored balance effect, applies the new one, and saves the row, atomically.</summary>
     Task UpdateAsync(TransactionRecord original, TransactionRecord updated);
 
-    /// <summary>Reverses the balance effect and deletes the row, atomically.</summary>
+    /// <summary>Reverses the balance effect and deletes the row, atomically, then removes its receipt photo.</summary>
     Task DeleteAsync(TransactionRecord transaction);
 
     /// <summary>
@@ -47,13 +47,20 @@ public class TransactionService : ITransactionService
     private readonly IAccountService _accounts;
     private readonly ICategoryService _categories;
     private readonly ICurrencyService _currency;
+    private readonly IReceiptPhotoStore _receiptPhotos;
 
-    public TransactionService(AppDbContext db, IAccountService accounts, ICategoryService categories, ICurrencyService currency)
+    public TransactionService(
+        AppDbContext db,
+        IAccountService accounts,
+        ICategoryService categories,
+        ICurrencyService currency,
+        IReceiptPhotoStore receiptPhotos)
     {
         _db = db;
         _accounts = accounts;
         _categories = categories;
         _currency = currency;
+        _receiptPhotos = receiptPhotos;
     }
 
     public async Task<List<TransactionRecord>> GetAllAsync()
@@ -100,6 +107,9 @@ public class TransactionService : ITransactionService
     {
         await _db.InitializeAsync();
         await _db.Connection.RunInTransactionAsync(conn => BalanceLedger.Delete(conn, transaction));
+
+        // Only once the row is gone, so a failed delete never loses the photo.
+        _receiptPhotos.Delete(transaction.ReceiptImagePath);
     }
 
     public async Task<IReadOnlyList<MonthlyFlow>> GetMonthlyFlowsAsync(DateTime endMonth, int monthCount)

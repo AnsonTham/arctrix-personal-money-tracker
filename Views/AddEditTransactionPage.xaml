@@ -49,13 +49,55 @@
                 </VisualStateGroup>
             </VisualStateManager.VisualStateGroups>
 
-            <Grid x:Name="Header" ColumnDefinitions="Auto,*">
+            <Grid x:Name="Header" ColumnDefinitions="Auto,*,Auto">
                 <controls:BackButton />
                 <Label Grid.Column="1" Text="{Binding Title}" Style="{StaticResource H1}" VerticalOptions="Center" />
+                <!-- Mobile builds put a "scan receipt" camera button here (see code-behind); desktop leaves it empty. -->
+                <ContentView x:Name="ScanReceiptHost" Grid.Column="2" VerticalOptions="Center" />
             </Grid>
 
             <Border x:Name="FormCard" Grid.Row="1" Style="{StaticResource Card}" Padding="28" VerticalOptions="Start">
                 <VerticalStackLayout Spacing="26">
+
+                    <!-- Filled in from a receipt scan: say so, so the values get checked before saving -->
+                    <Border IsVisible="{Binding HasScanNotice}"
+                            Background="{StaticResource AccentSoftBrush}"
+                            Stroke="{StaticResource AccentBrush}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 14"
+                            Padding="14,12">
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding ScanFailed}" Value="True">
+                                <Setter Property="Background" Value="{StaticResource NegativeSoftBrush}" />
+                                <Setter Property="Stroke" Value="{StaticResource NegativeBrush}" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <VerticalStackLayout Spacing="8">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                <Image Source="icon_camera.png" WidthRequest="18" HeightRequest="18" VerticalOptions="Center" />
+                                <Label Grid.Column="1" Text="{Binding ScanNotice}" Style="{StaticResource BodyStrong}" TextColor="{StaticResource Accent}" VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding ScanFailed}" Value="True">
+                                            <Setter Property="TextColor" Value="{StaticResource Negative}" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                            </Grid>
+                            <VerticalStackLayout IsVisible="{Binding HasScannedItems}" Spacing="3" Margin="28,2,0,0">
+                                <Label Text="Items read from the receipt" Style="{StaticResource Overline}" Margin="0,0,0,3" />
+                                <VerticalStackLayout Spacing="3" BindableLayout.ItemsSource="{Binding ScannedItems}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="models:ReceiptLineItem">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                                <Label Text="{Binding Description}" Style="{StaticResource Caption}" TextColor="{StaticResource TextSecondary}" MaxLines="1" LineBreakMode="TailTruncation" />
+                                                <Label Grid.Column="1" Text="{Binding Amount, StringFormat='{0:N2}'}" Style="{StaticResource Caption}" TextColor="{StaticResource TextSecondary}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
 
                     <!-- Type -->
                     <VerticalStackLayout Spacing="10">
@@ -207,6 +249,26 @@
                             </Border>
                         </VerticalStackLayout>
                     </Grid>
+
+                    <!-- The original receipt photo, when this transaction came from a scan -->
+                    <VerticalStackLayout Spacing="10" IsVisible="{Binding HasReceiptPhoto}">
+                        <Label Text="Receipt" Style="{StaticResource Overline}" />
+                        <Border Style="{StaticResource InputShell}" Padding="8" SemanticProperties.Description="View the receipt photo">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ViewReceiptCommand}" />
+                            </Border.GestureRecognizers>
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                                <Border StrokeThickness="0" StrokeShape="RoundRectangle 8" WidthRequest="56" HeightRequest="72" Background="{StaticResource Surface3Brush}">
+                                    <Image Source="{Binding ReceiptPhotoSource}" Aspect="AspectFill" />
+                                </Border>
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                    <Label Text="Receipt photo" Style="{StaticResource BodyStrong}" />
+                                    <Label Text="Tap to view the original" Style="{StaticResource Caption}" />
+                                </VerticalStackLayout>
+                                <Image Grid.Column="2" Source="icon_chevron_down.png" Rotation="-90" WidthRequest="18" HeightRequest="18" VerticalOptions="Center" />
+                            </Grid>
+                        </Border>
+                    </VerticalStackLayout>
 
                     <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorText}" IsVisible="{Binding HasError}" />
 

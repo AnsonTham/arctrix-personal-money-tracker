@@ -48,6 +48,12 @@ public static class MauiProgram
         builder.Services.AddSingleton<IRecurringPaymentService, RecurringPaymentService>();
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
         builder.Services.AddSingleton<ICurrencyService, CurrencyService>();
+        builder.Services.AddSingleton<IReceiptPhotoStore, ReceiptPhotoStore>();
+#if ANDROID
+        builder.Services.AddSingleton<IReceiptOcrService, MlKitReceiptOcrService>();
+#elif IOS
+        builder.Services.AddSingleton<IReceiptOcrService, VisionReceiptOcrService>();
+#endif
 #if WINDOWS
         builder.Services.AddSingleton<IReportService, ReportService>();
 #else
@@ -80,6 +86,14 @@ public static class MauiProgram
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddTransient<ReportsPage>();
         builder.Services.AddTransient<MorePage>();
+
+#if ANDROID || IOS
+        // Receipt scanning (mobile only)
+        builder.Services.AddTransient<ScanReceiptViewModel>();
+        builder.Services.AddTransient<ReceiptPhotoViewModel>();
+        builder.Services.AddTransient<ScanReceiptPage>();
+        builder.Services.AddTransient<ReceiptPhotoPage>();
+#endif
 
         return builder.Build();
     }

@@ -11,7 +11,8 @@ namespace Arctrix.PersonalMoneyTracker.ViewModels;
 /// <summary>
 /// Add or edit a transaction. Query parameters: <see cref="Routes.TransactionTypeParam"/>
 /// preselects the type for a new transaction; <see cref="Routes.TransactionIdParam"/> opens
-/// an existing one for editing.
+/// an existing one for editing; <see cref="Routes.ReceiptScanParam"/> (a <see cref="ReceiptDraft"/>)
+/// pre-fills a new one from a scanned receipt and attaches its photo.
 /// </summary>
 public partial class AddEditTransactionViewModel : ViewModelBase, IQueryAttributable
 {
@@ -20,10 +21,14 @@ public partial class AddEditTransactionViewModel : ViewModelBase, IQueryAttribut
     private readonly ICategoryService _categories;
     private readonly ISettingsService _settings;
     private readonly ICurrencyService _currency;
+    private readonly IReceiptPhotoStore _receiptPhotos;
 
     private TransactionRecord? _editing;
     private int? _editId;
+    private ReceiptDraft? _receiptDraft;
+    private string? _receiptPath;
     private bool _loaded;
+    private bool _saved;
     private string _baseCurrency = "MYR";
     private List<Category> _allCategories = new();
 
@@ -32,13 +37,15 @@ public partial class AddEditTransactionViewModel : ViewModelBase, IQueryAttribut
         IAccountService accounts,
         ICategoryService categories,
         ISettingsService settings,
-        ICurrencyService currency)
+        ICurrencyService currency,
+        IReceiptPhotoStore receiptPhotos)
     {
         _transactions = transactions;
         _accounts = accounts;
         _categories = categories;
         _settings = settings;
         _currency = currency;
+        _receiptPhotos = receiptPhotos;
         Title = "Add transaction";
 
         TypeOptions = Enum.GetValues<TransactionType>()
@@ -66,7 +73,25 @@ public partial class AddEditTransactionViewModel : ViewModelBase, IQueryAttribut
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SaveLabel))]
+    [NotifyPropertyChangedFor(nameof(CanScanReceipt))]
     public partial bool IsEditing { get; set; }
+
+    /// <summary>Full path of the attached receipt photo, for display; null when there is none.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasReceiptPhoto))]
+    [NotifyPropertyChangedFor(nameof(CanScanReceipt))]
+    public partial string? ReceiptPhotoSource { get; set; }
+
+    /// <summary>Shown above the form after a scan, so pre-filled values get checked before saving.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasScanNotice))]
+    public partial string ScanNotice { get; set; } = string.Empty;
+
+    [ObservableProperty] public partial bool ScanFailed { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasScannedItems))]
+    public partial IReadOnlyList<ReceiptLineItem> ScannedItems { get; set; } = [];
 
     public IReadOnlyList<FilterOption> TypeOptions { get; }
     public ObservableCollection<CategoryOption> CategoryOptions { get; } = new();
@@ -77,6 +102,12 @@ public partial class AddEditTransactionViewModel : ViewModelBase, IQueryAttribut
     public string AccountLabel => ShowToAccount ? "From account" : "Account";
     public bool HasError => ErrorMessage.Length > 0;
     public string SaveLabel => IsEditing ? "Save changes" : "Save transaction";
+    public bool HasReceiptPhoto => ReceiptPhotoSource is not null;
+    public bool HasScanNotice => ScanNotice.Length > 0;
+    public bool HasScannedItems => ScannedItems.Count > 0;
+
+    /// <summary>A scan starts a new transaction from a photo, so it's offered on mobile when adding one without a photo yet.</summary>
+    public bool CanScanReceipt => ReceiptScanning.IsSupported && !IsEditing && !HasReceiptPhoto;
 
     partial void OnSelectedTypeChanged(TransactionType value)
     {
@@ -99,6 +130,9 @@ public partial class AddEditTransactionViewModel : ViewModelBase, IQueryAttribut
         {
             _editId = parsedId;
         }
+
+        if (query.TryGetValue(Routes.ReceiptScanParam, out var draft) && draft is ReceiptDraft receiptDraft)
+            _receiptDraft = receiptDraft;
     }
 
     [RelayCommand]
@@ -136,14 +170,67 @@ public partial class AddEditTransactionViewModel : ViewModelBase, IQueryAttribut
 
             SelectedCategory = _allCategories.FirstOrDefault(c => c.Id == existing.CategoryId);
             SelectedType = existing.Type;
+            SetReceiptPhoto(existing.ReceiptImagePath);
         }
         else
         {
             CurrencyCode = _baseCurrency;
             SelectedAccount = Accounts.FirstOrDefault();
+
+            if (_receiptDraft is not null)
+                ApplyReceiptDraft(_receiptDraft);
         }
 
         RefreshCategories();
+    }
+
+    /// <summary>
+    /// Pre-fills a new transaction from a scanned receipt. Every field stays editable and nothing is
+    /// saved until the user taps Save; the notice says the values came from a scan.
+    /// </summary>
+    private void ApplyReceiptDraft(ReceiptDraft draft)
+    {
+        SetReceiptPhoto(draft.PhotoPath);
+
+        if (draft.Scan is not ReceiptScanResult scan)
+        {
+            ScanFailed = true;
+            ScanNotice = "Couldn't read the receipt — enter it manually. The photo is still attached.";
+            return;
+        }
+
+        SelectedType = TransactionType.Expense;
+        if (scan.Total is decimal total)
+            AmountText = total.ToString("0.00", CultureInfo.CurrentCulture);
+        if (scan.Date is DateTime date)
+            Date = date.Date + DateTime.Now.TimeOfDay;
+        if (scan.ShopName is string shopName)
+            Notes = shopName;
+        if (scan.SuggestedCategory is string categoryName
+            && _allCategories.FirstOrDefault(c => c.DefaultType == TransactionType.Expense
+                && string.Equals(c.Name, categoryName, StringComparison.OrdinalIgnoreCase)) is Category suggested)
+        {
+            SelectedCategory = suggested;
+        }
+
+        ScannedItems = scan.Items;
+        ScanNotice = "Scanned from your receipt — please check the details before saving.";
+    }
+
+    private void SetReceiptPhoto(string? storedPath)
+    {
+        _receiptPath = storedPath;
+        ReceiptPhotoSource = storedPath is null ? null : _receiptPhotos.GetFullPath(storedPath);
+    }
+
+    /// <summary>Deletes a photo attached by a scan when the form is left without saving.</summary>
+    public void DiscardUnsavedReceipt()
+    {
+        if (_saved || _editing is not null || _receiptPath is null)
+            return;
+
+        _receiptPhotos.Delete(_receiptPath);
+        SetReceiptPhoto(null);
     }
 
     [RelayCommand]
@@ -210,6 +297,7 @@ public partial class AddEditTransactionViewModel : ViewModelBase, IQueryAttribut
             Notes = Notes.Trim(),
             // Preserve the link to the recurring payment that generated this row, if any.
             RecurringPaymentId = _editing?.RecurringPaymentId,
+            ReceiptImagePath = _receiptPath,
             CreatedAt = _editing?.CreatedAt ?? DateTime.Now
         };
 
@@ -227,8 +315,19 @@ public partial class AddEditTransactionViewModel : ViewModelBase, IQueryAttribut
             return;
         }
 
+        _saved = true;
         await Shell.Current.GoToAsync("..");
     }
+
+    [RelayCommand]
+    private Task ScanReceipt() =>
+        CanScanReceipt ? Shell.Current.GoToAsync($"../{Routes.ScanReceipt}") : Task.CompletedTask;
+
+    [RelayCommand]
+    private Task ViewReceipt() =>
+        ReceiptScanning.IsSupported && ReceiptPhotoSource is string path
+            ? Shell.Current.GoToAsync(Routes.ReceiptPhoto, new ShellNavigationQueryParameters { [Routes.ReceiptPathParam] = path })
+            : Task.CompletedTask;
 
     [RelayCommand]
     private async Task Delete()

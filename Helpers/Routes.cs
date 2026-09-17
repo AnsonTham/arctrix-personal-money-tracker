@@ -19,6 +19,12 @@ public static class Routes
     public const string More = "more";
     public const string QuickAdd = "quickadd";
 
+    // Mobile only: receipt scanning, and viewing a transaction's receipt photo.
+    public const string ScanReceipt = "scanreceipt";
+    public const string ReceiptPhoto = "receiptphoto";
+
     public const string TransactionTypeParam = "type";
     public const string TransactionIdParam = "id";
+    public const string ReceiptScanParam = "receiptscan";
+    public const string ReceiptPathParam = "receiptpath";
 }

@@ -64,4 +64,27 @@
     <Compile Remove="Services\ReportService.cs" />
   </ItemGroup>
 
+  <!-- Receipt scanning is mobile-only: desktop builds don't compile its OCR contract, pages or view models. -->
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+    <Compile Remove="Services\IReceiptOcrService.cs" />
+    <Compile Remove="ViewModels\ScanReceiptViewModel.cs" />
+    <Compile Remove="ViewModels\ReceiptPhotoViewModel.cs" />
+    <Compile Remove="Views\ScanReceiptPage.xaml.cs" />
+    <Compile Remove="Views\ReceiptPhotoPage.xaml.cs" />
+    <MauiXaml Remove="Views\ScanReceiptPage.xaml" />
+    <MauiXaml Remove="Views\ReceiptPhotoPage.xaml" />
+  </ItemGroup>
+
+  <!-- Receipt scanning is mobile-only. Android reads text with Google ML Kit's bundled Latin model
+       (on-device, no key or network); iOS uses Apple's Vision framework, which needs no package. -->
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+    <PackageReference Include="Xamarin.Google.MLKit.TextRecognition" Version="116.0.1.9" />
+    <!-- ML Kit's dependencies pin older AndroidX Kotlin-extension packages than the AndroidX versions
+         MAUI resolves; reference the matching releases so the graph is consistent (NU1608). -->
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData" Version="2.11.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData.Core.Ktx" Version="2.11.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Fragment.Ktx" Version="1.9.0" />
+    <PackageReference Include="Xamarin.AndroidX.Collection.Ktx" Version="1.6.0.1" />
+  </ItemGroup>
+
 </Project>

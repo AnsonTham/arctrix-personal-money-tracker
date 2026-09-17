@@ -45,9 +45,20 @@
                             <Setter TargetName="QuickActions" Property="Grid.RowDefinitions" Value="Auto,Auto" />
                             <Setter TargetName="AddExpenseButton" Property="Grid.Row" Value="0" />
                             <Setter TargetName="AddExpenseButton" Property="Grid.Column" Value="0" />
-                            <Setter TargetName="AddExpenseButton" Property="Grid.ColumnSpan" Value="2" />
+                            <!-- Full width on desktop; on mobile it shares the row with Scan receipt. -->
+                            <Setter TargetName="AddExpenseButton" Property="Grid.ColumnSpan">
+                                <Setter.Value>
+                                    <OnPlatform x:TypeArguments="x:Int32" Default="2">
+                                        <On Platform="Android, iOS" Value="1" />
+                                    </OnPlatform>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter TargetName="ScanReceiptHost" Property="Grid.Row" Value="0" />
+                            <Setter TargetName="ScanReceiptHost" Property="Grid.Column" Value="1" />
                             <Setter TargetName="TransferButton" Property="Grid.Row" Value="1" />
+                            <Setter TargetName="TransferButton" Property="Grid.Column" Value="0" />
                             <Setter TargetName="IncomeButton" Property="Grid.Row" Value="1" />
+                            <Setter TargetName="IncomeButton" Property="Grid.Column" Value="1" />
 
                             <Setter TargetName="StatsGrid" Property="Grid.Row" Value="3" />
                             <Setter TargetName="StatsGrid" Property="Grid.Column" Value="0" />
@@ -74,15 +85,17 @@
             <!-- Quick actions -->
             <Grid x:Name="QuickActions"
                   Grid.Column="1"
-                  ColumnDefinitions="Auto,Auto,Auto"
+                  ColumnDefinitions="Auto,Auto,Auto,Auto"
                   ColumnSpacing="10"
                   RowSpacing="10"
                   HorizontalOptions="End"
                   VerticalOptions="Center">
-                <!-- Narrow widths give the primary action its own full-width row so its label never truncates. -->
-                <Button x:Name="TransferButton" Text="Transfer" Style="{StaticResource SecondaryButton}" Command="{Binding QuickAddTransferCommand}" />
-                <Button x:Name="IncomeButton" Grid.Column="1" Text="Income" Style="{StaticResource SecondaryButton}" Command="{Binding QuickAddIncomeCommand}" />
-                <Button x:Name="AddExpenseButton" Grid.Column="2" Text="Add expense" Command="{Binding QuickAddExpenseCommand}" />
+                <!-- Mobile builds put a "Scan receipt" button here (see code-behind); desktop leaves it hidden and empty. -->
+                <ContentView x:Name="ScanReceiptHost" IsVisible="False" />
+                <!-- Narrow widths give the primary action a row that never truncates its label. -->
+                <Button x:Name="TransferButton" Grid.Column="1" Text="Transfer" Style="{StaticResource SecondaryButton}" Command="{Binding QuickAddTransferCommand}" />
+                <Button x:Name="IncomeButton" Grid.Column="2" Text="Income" Style="{StaticResource SecondaryButton}" Command="{Binding QuickAddIncomeCommand}" />
+                <Button x:Name="AddExpenseButton" Grid.Column="3" Text="Add expense" Command="{Binding QuickAddExpenseCommand}" />
             </Grid>
 
             <!-- Net worth hero -->

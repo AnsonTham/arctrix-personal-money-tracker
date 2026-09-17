@@ -31,6 +31,9 @@
 	<string>UIStatusBarStyleLightContent</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<!-- Receipt scanning: photos are read on the device with Vision and never uploaded. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Used to scan receipts for expense tracking.</string>
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
 </dict>

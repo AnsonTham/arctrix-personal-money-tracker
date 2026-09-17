@@ -334,13 +334,17 @@
     </Style>
 
     <!-- In-page back button for pushed pages; hidden unless AppPage.ShowBackButton is set. -->
-    <Style TargetType="controls:BackButton" BasedOn="{StaticResource SecondaryButton}">
-        <Setter Property="ImageSource" Value="icon_back.png" />
+    <!-- Square 48px icon-only button. Set ImageSource and a SemanticProperties.Description. -->
+    <Style x:Key="IconButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
         <Setter Property="WidthRequest" Value="48" />
         <Setter Property="HeightRequest" Value="48" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="CornerRadius" Value="14" />
         <Setter Property="VerticalOptions" Value="Center" />
+    </Style>
+
+    <Style TargetType="controls:BackButton" BasedOn="{StaticResource IconButton}">
+        <Setter Property="ImageSource" Value="icon_back.png" />
         <Setter Property="Margin" Value="0,0,14,0" />
     </Style>
 

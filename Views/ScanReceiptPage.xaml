@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:Arctrix.PersonalMoneyTracker.Views"
+             xmlns:controls="clr-namespace:Arctrix.PersonalMoneyTracker.Controls"
+             xmlns:vm="clr-namespace:Arctrix.PersonalMoneyTracker.ViewModels"
+             x:Class="Arctrix.PersonalMoneyTracker.Views.ScanReceiptPage"
+             x:DataType="vm:ScanReceiptViewModel"
+             Title="{Binding Title}">
+
+    <ScrollView>
+        <Grid x:Name="LayoutRoot" HorizontalOptions="Center" Padding="32,28,32,40" RowDefinitions="Auto,Auto" RowSpacing="20">
+
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="LayoutStates">
+                    <VisualState x:Name="Wide" />
+                    <VisualState x:Name="Narrow">
+                        <VisualState.Setters>
+                            <Setter Property="Padding" Value="{StaticResource PagePaddingPhone}" />
+                            <Setter Property="RowSpacing" Value="16" />
+                            <Setter TargetName="Header" Property="Margin" Value="0,8,0,0" />
+                            <Setter TargetName="StageCard" Property="Padding" Value="20" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+
+            <Grid x:Name="Header" ColumnDefinitions="Auto,*">
+                <controls:BackButton />
+                <Label Grid.Column="1" Text="{Binding Title}" Style="{StaticResource H1}" VerticalOptions="Center" />
+            </Grid>
+
+            <Border x:Name="StageCard" Grid.Row="1" Style="{StaticResource Card}" Padding="28" VerticalOptions="Start">
+                <Grid>
+                    <!-- Ready: explain what happens, then take the photo -->
+                    <VerticalStackLayout Spacing="18" IsVisible="{Binding IsReady}">
+                        <Border Style="{StaticResource IconTile}" WidthRequest="56" HeightRequest="56" HorizontalOptions="Start">
+                            <Image Source="icon_camera.png" WidthRequest="26" HeightRequest="26" HorizontalOptions="Center" VerticalOptions="Center" />
+                        </Border>
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Photograph a receipt" Style="{StaticResource H2}" />
+                            <Label Text="Arctrix reads the shop, date and total so you only need to check them. The photo is read on this device and never uploaded."
+                                   Style="{StaticResource Body}" />
+                        </VerticalStackLayout>
+                        <Button Text="Take photo" Command="{Binding TakePhotoCommand}" />
+                        <Button Text="Enter manually instead" Style="{StaticResource GhostButton}" Command="{Binding EnterManuallyCommand}" />
+                    </VerticalStackLayout>
+
+                    <!-- Waiting for the camera -->
+                    <VerticalStackLayout Spacing="14" Padding="0,32" IsVisible="{Binding IsCapturing}">
+                        <ActivityIndicator IsRunning="{Binding IsCapturing}" HorizontalOptions="Center" />
+                        <Label Text="Opening the camera…" Style="{StaticResource Body}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+
+                    <!-- Reading the captured photo -->
+                    <VerticalStackLayout Spacing="16" IsVisible="{Binding IsReading}">
+                        <Border StrokeThickness="0" StrokeShape="RoundRectangle 14" HeightRequest="320" Background="{StaticResource Surface2Brush}">
+                            <Image Source="{Binding PhotoPreview}" Aspect="AspectFill" Opacity="0.6" />
+                        </Border>
+                        <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
+                            <ActivityIndicator IsRunning="{Binding IsReading}" WidthRequest="22" HeightRequest="22" VerticalOptions="Center" />
+                            <Label Text="Reading the receipt…" Style="{StaticResource BodyStrong}" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                        <Label Text="This happens on your device — nothing is uploaded." Style="{StaticResource Caption}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+
+                    <!-- No camera, or camera permission denied -->
+                    <VerticalStackLayout Spacing="16" IsVisible="{Binding IsUnavailable}">
+                        <Label Text="Can't use the camera" Style="{StaticResource H2}" />
+                        <Label Text="{Binding UnavailableMessage}" Style="{StaticResource Body}" />
+                        <Button Text="Try again" Style="{StaticResource SecondaryButton}" Command="{Binding TakePhotoCommand}" />
+                        <Button Text="Enter manually" Command="{Binding EnterManuallyCommand}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+        </Grid>
+    </ScrollView>
+
+</views:AppPage>
