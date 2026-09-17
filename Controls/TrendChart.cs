@@ -1,4 +1,5 @@
 using System.Globalization;
+using Arctrix.PersonalMoneyTracker.Helpers;
 using Arctrix.PersonalMoneyTracker.Models;
 using GFont = Microsoft.Maui.Graphics.Font;
 using HorizontalAlignment = Microsoft.Maui.Graphics.HorizontalAlignment;
@@ -19,7 +20,7 @@ public class TrendChart : GraphicsView, IDrawable
     private const float AxisBand = 24;
 
     public static readonly BindableProperty PointsProperty = BindableProperty.Create(
-        nameof(Points), typeof(IReadOnlyList<ChartPoint>), typeof(TrendChart), null, propertyChanged: Redraw);
+        nameof(Points), typeof(IReadOnlyList<ChartPoint>), typeof(TrendChart), null, propertyChanged: OnPointsChanged);
 
     public static readonly BindableProperty LineColorProperty = BindableProperty.Create(
         nameof(LineColor), typeof(Color), typeof(TrendChart), Color.FromArgb("#E6B450"), propertyChanged: Redraw);
@@ -42,8 +43,13 @@ public class TrendChart : GraphicsView, IDrawable
     public static readonly BindableProperty ValuePrefixProperty = BindableProperty.Create(
         nameof(ValuePrefix), typeof(string), typeof(TrendChart), string.Empty, propertyChanged: Redraw);
 
+    private const string RevealAnimation = "reveal";
+
     private RectF _plot;
     private int? _hoverIndex;
+
+    // 0 to 1 while new data rises from the baseline; the grid and labels don't animate.
+    private float _reveal = 1;
 
     public TrendChart()
     {
@@ -125,6 +131,8 @@ public class TrendChart : GraphicsView, IDrawable
         var plot = _plot;
         float X(int i) => points.Count == 1 ? plot.Center.X : plot.Left + i * plot.Width / (points.Count - 1);
         float Y(double v) => (float)(plot.Bottom - (v - axisMin) / (axisMax - axisMin) * plot.Height);
+        var reveal = _reveal;
+        float DataY(double v) => plot.Bottom - (plot.Bottom - Y(v)) * reveal;
 
         canvas.Font = GFont.Default;
         canvas.FontSize = 11;
@@ -147,7 +155,7 @@ public class TrendChart : GraphicsView, IDrawable
         var area = new PathF();
         for (var i = 0; i < points.Count; i++)
         {
-            var (x, y) = (X(i), Y(points[i].Value));
+            var (x, y) = (X(i), DataY(points[i].Value));
             if (i == 0)
             {
                 line.MoveTo(x, y);
@@ -163,7 +171,7 @@ public class TrendChart : GraphicsView, IDrawable
         area.LineTo(X(0), plot.Bottom);
         area.Close();
 
-        canvas.FillColor = LineColor.WithAlpha(0.10f);
+        canvas.FillColor = LineColor.WithAlpha(0.10f * reveal);
         canvas.FillPath(area);
 
         canvas.StrokeColor = LineColor;
@@ -173,12 +181,12 @@ public class TrendChart : GraphicsView, IDrawable
         canvas.DrawPath(line);
 
         var last = points.Count - 1;
-        DrawDot(canvas, X(last), Y(points[last].Value));
+        DrawDot(canvas, X(last), DataY(points[last].Value));
 
         if (_hoverIndex is int hover && hover < points.Count)
         {
             var hx = X(hover);
-            var hy = Y(points[hover].Value);
+            var hy = DataY(points[hover].Value);
 
             canvas.StrokeColor = LabelColor.WithAlpha(0.5f);
             canvas.StrokeSize = 1;
@@ -240,6 +248,40 @@ public class TrendChart : GraphicsView, IDrawable
 
         _hoverIndex = index;
         Invalidate();
+    }
+
+    // Grow the line in only when the data really changed, so revisiting a page doesn't replay it.
+    private static void OnPointsChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var chart = (TrendChart)bindable;
+        if (newValue is IReadOnlyList<ChartPoint> { Count: > 0 } points
+            && (oldValue is not IReadOnlyList<ChartPoint> previous || !previous.SequenceEqual(points)))
+            chart.PlayReveal();
+        else
+            chart.Invalidate();
+    }
+
+    private void PlayReveal()
+    {
+        this.AbortAnimation(RevealAnimation);
+        if (Handler is null)
+        {
+            _reveal = 1;
+            Invalidate();
+            return;
+        }
+
+        _reveal = 0;
+        new Animation(progress =>
+            {
+                _reveal = (float)progress;
+                Invalidate();
+            })
+            .Commit(this, RevealAnimation, 16, Motion.Long, Motion.Ease, (_, _) =>
+            {
+                _reveal = 1;
+                Invalidate();
+            });
     }
 
     private static void Redraw(BindableObject bindable, object oldValue, object newValue)

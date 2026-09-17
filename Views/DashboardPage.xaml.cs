@@ -13,10 +13,20 @@ public partial class DashboardPage : AppPage
         BindingContext = _viewModel = viewModel;
     }
 
+    protected override IReadOnlyList<VisualElement> EntranceElements =>
+        [Header, QuickActions, HeroCard, StatsGrid, RecentCard, SpendingCard, AccountsCard];
+
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await _viewModel.LoadCommand.ExecuteAsync(null);
+        try
+        {
+            await _viewModel.LoadCommand.ExecuteAsync(null);
+        }
+        finally
+        {
+            await PlayEntranceAsync();
+        }
     }
 
     protected override void OnSizeAllocated(double width, double height)

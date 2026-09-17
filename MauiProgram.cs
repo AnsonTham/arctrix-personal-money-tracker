@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Arctrix.PersonalMoneyTracker.Data;
+using Arctrix.PersonalMoneyTracker.Helpers;
 using Arctrix.PersonalMoneyTracker.Services;
 using Arctrix.PersonalMoneyTracker.ViewModels;
 using Arctrix.PersonalMoneyTracker.Views;
@@ -31,6 +32,7 @@ public static class MauiProgram
 #endif
 
         UseBorderlessInputs();
+        UsePressFeedback();
 
 #if DEBUG
         builder.Logging.AddDebug();
@@ -93,6 +95,14 @@ public static class MauiProgram
         Microsoft.Maui.Handlers.PickerHandler.Mapper.AppendToMapping(nameof(UseBorderlessInputs), (handler, _) => RemoveNativeChrome(handler.PlatformView));
         Microsoft.Maui.Handlers.DatePickerHandler.Mapper.AppendToMapping(nameof(UseBorderlessInputs), (handler, _) => RemoveNativeChrome(handler.PlatformView));
     }
+
+    /// <summary>Every button shrinks slightly while pressed (see <see cref="Motion.AddPressFeedback"/>).</summary>
+    private static void UsePressFeedback() =>
+        Microsoft.Maui.Handlers.ButtonHandler.Mapper.AppendToMapping(nameof(UsePressFeedback), (_, view) =>
+        {
+            if (view is Button button)
+                Motion.AddPressFeedback(button);
+        });
 
     private static void RemoveNativeChrome(object platformView)
     {

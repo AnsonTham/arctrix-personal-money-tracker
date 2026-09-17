@@ -1,4 +1,5 @@
 using System.Globalization;
+using Arctrix.PersonalMoneyTracker.Helpers;
 using Arctrix.PersonalMoneyTracker.Models;
 using GFont = Microsoft.Maui.Graphics.Font;
 using HorizontalAlignment = Microsoft.Maui.Graphics.HorizontalAlignment;
@@ -21,7 +22,7 @@ public class FlowBarChart : GraphicsView, IDrawable
     private const float PairGap = 2;
 
     public static readonly BindableProperty FlowsProperty = BindableProperty.Create(
-        nameof(Flows), typeof(IReadOnlyList<MonthlyFlow>), typeof(FlowBarChart), null, propertyChanged: Redraw);
+        nameof(Flows), typeof(IReadOnlyList<MonthlyFlow>), typeof(FlowBarChart), null, propertyChanged: OnFlowsChanged);
 
     public static readonly BindableProperty IncomeColorProperty = BindableProperty.Create(
         nameof(IncomeColor), typeof(Color), typeof(FlowBarChart), Color.FromArgb("#22D3A2"), propertyChanged: Redraw);
@@ -47,8 +48,13 @@ public class FlowBarChart : GraphicsView, IDrawable
     public static readonly BindableProperty ValuePrefixProperty = BindableProperty.Create(
         nameof(ValuePrefix), typeof(string), typeof(FlowBarChart), string.Empty, propertyChanged: Redraw);
 
+    private const string RevealAnimation = "reveal";
+
     private RectF _plot;
     private int? _hoverIndex;
+
+    // 0 to 1 while new columns grow from the baseline; the grid and labels don't animate.
+    private float _reveal = 1;
 
     public FlowBarChart()
     {
@@ -139,6 +145,8 @@ public class FlowBarChart : GraphicsView, IDrawable
         var slot = plot.Width / flows.Count;
         var barWidth = Math.Min(MaxBarWidth, (slot * 0.56f - PairGap) / 2);
         float Y(double v) => (float)(plot.Bottom - v / axisMax * plot.Height);
+        var reveal = _reveal;
+        float BarTop(decimal v) => plot.Bottom - (plot.Bottom - Y((double)v)) * reveal;
 
         if (_hoverIndex is int hovered && hovered < flows.Count)
         {
@@ -161,8 +169,8 @@ public class FlowBarChart : GraphicsView, IDrawable
         for (var i = 0; i < flows.Count; i++)
         {
             var center = plot.Left + slot * (i + 0.5f);
-            DrawColumn(canvas, center - PairGap / 2 - barWidth, barWidth, Y((double)flows[i].Income), plot.Bottom, IncomeColor);
-            DrawColumn(canvas, center + PairGap / 2, barWidth, Y((double)flows[i].Expense), plot.Bottom, ExpenseColor);
+            DrawColumn(canvas, center - PairGap / 2 - barWidth, barWidth, BarTop(flows[i].Income), plot.Bottom, IncomeColor);
+            DrawColumn(canvas, center + PairGap / 2, barWidth, BarTop(flows[i].Expense), plot.Bottom, ExpenseColor);
 
             canvas.FontColor = LabelColor;
             canvas.DrawString(flows[i].MonthStart.ToString("MMM", CultureInfo.CurrentCulture), center - 24, plot.Bottom + 8, 48, 14, HorizontalAlignment.Center, VerticalAlignment.Top);
@@ -241,6 +249,40 @@ public class FlowBarChart : GraphicsView, IDrawable
 
         _hoverIndex = index;
         Invalidate();
+    }
+
+    // Grow the columns in only when the data really changed, so revisiting a page doesn't replay it.
+    private static void OnFlowsChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var chart = (FlowBarChart)bindable;
+        if (newValue is IReadOnlyList<MonthlyFlow> { Count: > 0 } flows
+            && (oldValue is not IReadOnlyList<MonthlyFlow> previous || !previous.SequenceEqual(flows)))
+            chart.PlayReveal();
+        else
+            chart.Invalidate();
+    }
+
+    private void PlayReveal()
+    {
+        this.AbortAnimation(RevealAnimation);
+        if (Handler is null)
+        {
+            _reveal = 1;
+            Invalidate();
+            return;
+        }
+
+        _reveal = 0;
+        new Animation(progress =>
+            {
+                _reveal = (float)progress;
+                Invalidate();
+            })
+            .Commit(this, RevealAnimation, 16, Motion.Long, Motion.Ease, (_, _) =>
+            {
+                _reveal = 1;
+                Invalidate();
+            });
     }
 
     private static void Redraw(BindableObject bindable, object oldValue, object newValue)

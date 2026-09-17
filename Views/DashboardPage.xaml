@@ -93,15 +93,14 @@
                         <Label Grid.Column="1" Text="Last 6 months" Style="{StaticResource Caption}" VerticalOptions="Center" />
                     </Grid>
 
-                    <Label x:Name="HeroAmount" Style="{StaticResource AmountHero}" FontSize="48">
-                        <Label.FormattedText>
-                            <FormattedString>
-                                <Span Text="{Binding BaseCurrency}" FontSize="20" FontFamily="InterSemiBold" TextColor="{StaticResource Muted}" />
-                                <Span Text=" " />
-                                <Span Text="{Binding NetWorth, StringFormat='{0:N2}'}" FontFamily="InterBold" />
-                            </FormattedString>
-                        </Label.FormattedText>
-                    </Label>
+                    <controls:CountingLabel x:Name="HeroAmount"
+                                            Style="{StaticResource AmountHero}"
+                                            FontSize="48"
+                                            Value="{Binding NetWorth}"
+                                            Prefix="{Binding BaseCurrency}"
+                                            PrefixFontSize="20"
+                                            PrefixFontFamily="InterSemiBold"
+                                            PrefixColor="{StaticResource Muted}" />
 
                     <Border Background="{StaticResource Surface2Brush}"
                             StrokeThickness="0"
@@ -171,7 +170,7 @@
                 <Border Grid.Row="1" Style="{StaticResource Card}">
                     <VerticalStackLayout Spacing="10" VerticalOptions="Center">
                         <Label Text="Cash &amp; bank" Style="{StaticResource Caption}" />
-                        <Label Text="{Binding CashBalance, StringFormat='{0:N2}'}" Style="{StaticResource AmountLarge}" />
+                        <controls:CountingLabel Value="{Binding CashBalance}" Style="{StaticResource AmountLarge}" />
                         <Label Text="{Binding BaseCurrency}" Style="{StaticResource Caption}" />
                     </VerticalStackLayout>
                 </Border>
@@ -179,7 +178,7 @@
                 <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}">
                     <VerticalStackLayout Spacing="10" VerticalOptions="Center">
                         <Label Text="Investments" Style="{StaticResource Caption}" />
-                        <Label Text="{Binding InvestmentBalance, StringFormat='{0:N2}'}" Style="{StaticResource AmountLarge}" />
+                        <controls:CountingLabel Value="{Binding InvestmentBalance}" Style="{StaticResource AmountLarge}" />
                         <Label Text="{Binding BaseCurrency}" Style="{StaticResource Caption}" />
                     </VerticalStackLayout>
                 </Border>
