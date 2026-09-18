@@ -15,6 +15,12 @@ public interface IReceiptPhotoStore
 
     /// <summary>Deletes a stored photo. Does nothing for a missing path or a path outside the receipts folder.</summary>
     void Delete(string? storedPath);
+
+    /// <summary>
+    /// Deletes stored photos that no transaction points at - left behind when the app stops while a
+    /// scanned transaction is still being reviewed.
+    /// </summary>
+    void DeleteUnreferenced(IReadOnlySet<string> keepStoredPaths);
 }
 
 public class ReceiptPhotoStore : IReceiptPhotoStore
@@ -41,6 +47,19 @@ public class ReceiptPhotoStore : IReceiptPhotoStore
 
     public string GetFullPath(string storedPath) =>
         Path.Combine(FileSystem.AppDataDirectory, storedPath.Replace('/', Path.DirectorySeparatorChar));
+
+    public void DeleteUnreferenced(IReadOnlySet<string> keepStoredPaths)
+    {
+        if (!Directory.Exists(Root))
+            return;
+
+        foreach (var file in Directory.EnumerateFiles(Root))
+        {
+            var storedPath = $"{Folder}/{Path.GetFileName(file)}";
+            if (!keepStoredPaths.Contains(storedPath))
+                Delete(storedPath);
+        }
+    }
 
     public void Delete(string? storedPath)
     {

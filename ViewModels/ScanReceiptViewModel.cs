@@ -27,12 +27,14 @@ public partial class ScanReceiptViewModel : ViewModelBase
 
     private readonly IReceiptOcrService _ocr;
     private readonly IReceiptPhotoStore _photos;
+    private readonly ITransactionService _transactions;
     private bool _started;
 
-    public ScanReceiptViewModel(IReceiptOcrService ocr, IReceiptPhotoStore photos)
+    public ScanReceiptViewModel(IReceiptOcrService ocr, IReceiptPhotoStore photos, ITransactionService transactions)
     {
         _ocr = ocr;
         _photos = photos;
+        _transactions = transactions;
         Title = "Scan receipt";
     }
 
@@ -48,12 +50,23 @@ public partial class ScanReceiptViewModel : ViewModelBase
     public bool IsReading => Stage == ReceiptScanStage.Reading;
     public bool IsUnavailable => Stage == ReceiptScanStage.Unavailable;
 
-    /// <summary>Opens the camera straight away the first time the page appears.</summary>
+    /// <summary>
+    /// Opens the camera straight away the first time the page appears. Coming back to the page
+    /// (the camera closed, or the camera app stopped without returning a photo) clears the wait, so
+    /// the page never sits on "Opening the camera…" with no way forward.
+    /// </summary>
     public Task StartAsync()
     {
         if (_started)
+        {
+            if (Stage == ReceiptScanStage.Capturing)
+                Stage = ReceiptScanStage.Ready;
             return Task.CompletedTask;
+        }
+
         _started = true;
+        // Scanning is when receipt photos churn, so tidy up any left by an interrupted review.
+        _ = _transactions.CleanUpOrphanReceiptsAsync();
         return TakePhotoCommand.ExecuteAsync(null);
     }
 

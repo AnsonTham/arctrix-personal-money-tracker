@@ -22,6 +22,9 @@ public interface ITransactionService
     /// <summary>Reverses the balance effect and deletes the row, atomically, then removes its receipt photo.</summary>
     Task DeleteAsync(TransactionRecord transaction);
 
+    /// <summary>Deletes receipt photos no transaction refers to any more.</summary>
+    Task CleanUpOrphanReceiptsAsync();
+
     /// <summary>
     /// Income and expense per month and recorded base currency for the <paramref name="monthCount"/>
     /// months ending with <paramref name="endMonth"/>'s month. Months with no income or expense have
@@ -110,6 +113,17 @@ public class TransactionService : ITransactionService
 
         // Only once the row is gone, so a failed delete never loses the photo.
         _receiptPhotos.Delete(transaction.ReceiptImagePath);
+    }
+
+    public async Task CleanUpOrphanReceiptsAsync()
+    {
+        await _db.InitializeAsync();
+        var referenced = (await _db.Connection.Table<TransactionRecord>().ToListAsync())
+            .Select(t => t.ReceiptImagePath)
+            .OfType<string>()
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        _receiptPhotos.DeleteUnreferenced(referenced);
     }
 
     public async Task<IReadOnlyList<MonthlyFlow>> GetMonthlyFlowsAsync(DateTime endMonth, int monthCount)

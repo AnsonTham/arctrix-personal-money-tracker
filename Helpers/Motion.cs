@@ -23,7 +23,7 @@ public static class Motion
     public static Task FadeInAsync(VisualElement element)
     {
         element.Opacity = 0;
-        return element.FadeToAsync(1, Medium, Ease);
+        return RunAsync(element, () => element.FadeToAsync(1, Medium, Ease));
     }
 
     /// <summary>Hides elements ahead of <see cref="RevealAsync"/>: transparent and shifted down slightly.</summary>
@@ -47,8 +47,8 @@ public static class Motion
             return;
 
         button.SetValue(HasPressFeedbackProperty, true);
-        button.Pressed += (_, _) => _ = button.ScaleToAsync(PressedScale, Short, Ease);
-        button.Released += (_, _) => _ = button.ScaleToAsync(1, Short, Ease);
+        button.Pressed += (_, _) => _ = ScaleAsync(button, PressedScale);
+        button.Released += (_, _) => _ = ScaleAsync(button, 1);
     }
 
     private static async Task RevealOneAsync(VisualElement element, int delay)
@@ -56,8 +56,42 @@ public static class Motion
         if (delay > 0)
             await Task.Delay(delay);
 
-        await Task.WhenAll(
+        await RunAsync(element, () => Task.WhenAll(
             element.FadeToAsync(1, Medium, Ease),
-            element.TranslateToAsync(0, 0, Medium, Ease));
+            element.TranslateToAsync(0, 0, Medium, Ease)));
+    }
+
+    private static Task ScaleAsync(VisualElement element, double scale) =>
+        RunAsync(element, () => element.ScaleToAsync(scale, Short, Ease), settle: false);
+
+    /// <summary>
+    /// Runs an animation only while its element still belongs to a live window. A page can be closed
+    /// (or the whole app torn down) mid-animation, and animating a disposed view throws; when that
+    /// happens the element is left in its finished state rather than stuck part-way.
+    /// </summary>
+    private static async Task RunAsync(VisualElement element, Func<Task> animate, bool settle = true)
+    {
+        if (element.Handler?.MauiContext is null)
+        {
+            if (settle)
+                Settle(element);
+            return;
+        }
+
+        try
+        {
+            await animate();
+        }
+        catch (ObjectDisposedException)
+        {
+            if (settle)
+                Settle(element);
+        }
+    }
+
+    private static void Settle(VisualElement element)
+    {
+        element.Opacity = 1;
+        element.TranslationY = 0;
     }
 }

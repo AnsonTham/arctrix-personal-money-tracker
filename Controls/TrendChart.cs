@@ -261,6 +261,17 @@ public class TrendChart : GraphicsView, IDrawable
             chart.Invalidate();
     }
 
+    /// <summary>Stops the reveal when the chart leaves the screen; its window may be torn down next.</summary>
+    protected override void OnHandlerChanging(HandlerChangingEventArgs args)
+    {
+        base.OnHandlerChanging(args);
+        if (args.NewHandler is null)
+        {
+            this.AbortAnimation(RevealAnimation);
+            _reveal = 1;
+        }
+    }
+
     private void PlayReveal()
     {
         this.AbortAnimation(RevealAnimation);
@@ -272,16 +283,25 @@ public class TrendChart : GraphicsView, IDrawable
         }
 
         _reveal = 0;
-        new Animation(progress =>
-            {
-                _reveal = (float)progress;
-                Invalidate();
-            })
-            .Commit(this, RevealAnimation, 16, Motion.Long, Motion.Ease, (_, _) =>
-            {
-                _reveal = 1;
-                Invalidate();
-            });
+        try
+        {
+            new Animation(progress =>
+                {
+                    _reveal = (float)progress;
+                    Invalidate();
+                })
+                .Commit(this, RevealAnimation, 16, Motion.Long, Motion.Ease, (_, _) =>
+                {
+                    _reveal = 1;
+                    Invalidate();
+                });
+        }
+        catch (ObjectDisposedException)
+        {
+            // The window was torn down as the data arrived; draw the finished chart.
+            _reveal = 1;
+            Invalidate();
+        }
     }
 
     private static void Redraw(BindableObject bindable, object oldValue, object newValue)

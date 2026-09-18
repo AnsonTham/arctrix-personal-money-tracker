@@ -84,12 +84,28 @@ public class CountingLabel : Label
             return;
         }
 
-        new Animation(progress => Render(from + (target - from) * (decimal)progress))
-            .Commit(this, CountAnimation, 16, Motion.Long, Motion.Ease, (_, cancelled) =>
-            {
-                if (!cancelled)
-                    Render(target);
-            });
+        try
+        {
+            new Animation(progress => Render(from + (target - from) * (decimal)progress))
+                .Commit(this, CountAnimation, 16, Motion.Long, Motion.Ease, (_, cancelled) =>
+                {
+                    if (!cancelled)
+                        Render(target);
+                });
+        }
+        catch (ObjectDisposedException)
+        {
+            // The window was torn down as the value arrived; just show it.
+            Render(target);
+        }
+    }
+
+    /// <summary>Stops counting when the label leaves the screen; its window may be torn down next.</summary>
+    protected override void OnHandlerChanging(HandlerChangingEventArgs args)
+    {
+        base.OnHandlerChanging(args);
+        if (args.NewHandler is null)
+            this.AbortAnimation(CountAnimation);
     }
 
     private void Render(decimal value)
@@ -97,6 +113,19 @@ public class CountingLabel : Label
         _shown = value;
         var number = value.ToString(Format, CultureInfo.CurrentCulture);
 
+        try
+        {
+            RenderText(number);
+        }
+        catch (ObjectDisposedException)
+        {
+            // The window went away mid-count; there is nothing left to draw into.
+            this.AbortAnimation(CountAnimation);
+        }
+    }
+
+    private void RenderText(string number)
+    {
         if (string.IsNullOrEmpty(Prefix))
         {
             FormattedText = null;
