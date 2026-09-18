@@ -18,11 +18,22 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Select the newest Xcode
+      # Newest Xcode that actually carries both SDKs: some installs on the image are missing the
+      # macOS SDK, which the asset compiler (actool) needs.
+      - name: Select the newest complete Xcode
         run: |
-          ls -d /Applications/Xcode*.app
-          sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -n 1)/Contents/Developer"
+          set -euo pipefail
+          for app in $(ls -d /Applications/Xcode*.app | sort -Vr); do
+            if [ -d "$app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" ] \
+               && [ -d "$app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs" ]; then
+              echo "Using $app"
+              sudo xcode-select -s "$app/Contents/Developer"
+              break
+            fi
+            echo "Skipping $app (incomplete SDKs)"
+          done
           xcodebuild -version
+          xcrun --find actool
 
       - name: Set up .NET 10
         uses: actions/setup-dotnet@v4
