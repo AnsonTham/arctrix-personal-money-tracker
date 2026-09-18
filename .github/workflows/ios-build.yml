@@ -23,17 +23,21 @@ jobs:
       - name: Select the newest complete Xcode
         run: |
           set -euo pipefail
+          # Resolve symlinked entries (e.g. Xcode_26.6.0.app -> Xcode_26.6.app): selecting the link
+          # path makes xcrun look for SDKs under a directory that doesn't exist.
           for app in $(ls -d /Applications/Xcode*.app | sort -Vr); do
-            if [ -d "$app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" ] \
-               && [ -d "$app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs" ]; then
-              echo "Using $app"
-              sudo xcode-select -s "$app/Contents/Developer"
+            real=$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$app")
+            if [ -d "$real/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" ] \
+               && [ -d "$real/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs" ]; then
+              echo "Using $real (via $app)"
+              sudo xcode-select -s "$real/Contents/Developer"
               break
             fi
             echo "Skipping $app (incomplete SDKs)"
           done
           xcodebuild -version
           xcrun --find actool
+          xcrun --find ibtool
 
       - name: Set up .NET 10
         uses: actions/setup-dotnet@v4
