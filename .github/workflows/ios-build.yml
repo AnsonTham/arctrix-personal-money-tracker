@@ -1,0 +1,66 @@
+name: iOS build
+
+# Builds the iOS app on a GitHub-hosted macOS runner and publishes an unsigned .ipa
+# as a downloadable artifact. Unsigned because signing needs a paid Apple Developer
+# account; sideloading tools (Sideloadly, AltStore) sign the .ipa on your own machine.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install the MAUI iOS workload
+        run: dotnet workload install maui-ios --skip-sign-check
+
+      - name: Restore dependencies
+        run: dotnet restore Arctrix.PersonalMoneyTracker.csproj -p:TargetFramework=net10.0-ios -p:RuntimeIdentifier=ios-arm64
+
+      # ios-arm64 is a real-device build (the simulator build won't install on an iPhone).
+      # Code signing is off: Sideloadly signs the app with your Apple ID on your PC.
+      - name: Build
+        run: >
+          dotnet build Arctrix.PersonalMoneyTracker.csproj
+          -f net10.0-ios -c Release --no-restore
+          -p:RuntimeIdentifier=ios-arm64
+          -p:CodesignKey=
+          -p:CodesignProvision=
+
+      # A device build produces Arctrix.PersonalMoneyTracker.app. An .ipa is that .app
+      # inside a "Payload" folder, zipped - which is exactly what sideloading tools expect.
+      - name: Package the app as an unsigned .ipa
+        run: |
+          set -euo pipefail
+          APP_PATH=$(find bin/Release/net10.0-ios -maxdepth 4 -name '*.app' -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "No .app bundle was produced by the build:"
+            find bin/Release/net10.0-ios -maxdepth 3 -print
+            exit 1
+          fi
+          echo "Packaging $APP_PATH"
+          mkdir -p artifacts/Payload
+          cp -R "$APP_PATH" artifacts/Payload/
+          cd artifacts
+          zip -qry ArctrixPersonalMoneyTracker-unsigned.ipa Payload
+          rm -rf Payload
+          ls -lh ArctrixPersonalMoneyTracker-unsigned.ipa
+
+      - name: Upload the .ipa artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: arctrix-ios-unsigned-ipa
+          path: artifacts/*.ipa
+          if-no-files-found: error
+          retention-days: 30
