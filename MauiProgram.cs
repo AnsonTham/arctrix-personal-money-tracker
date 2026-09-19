@@ -53,6 +53,10 @@ public static class MauiProgram
         builder.Services.AddSingleton<IReceiptOcrService, MlKitReceiptOcrService>();
 #elif IOS
         builder.Services.AddSingleton<IReceiptOcrService, VisionReceiptOcrService>();
+#elif WINDOWS
+        // No scanning UI on desktop; this reads receipts sent to the Telegram bot.
+        builder.Services.AddSingleton<IReceiptOcrService, WindowsReceiptOcrService>();
+        builder.Services.AddSingleton<Services.Telegram.TelegramBotService>();
 #endif
 #if WINDOWS
         builder.Services.AddSingleton<IReportService, ReportService>();

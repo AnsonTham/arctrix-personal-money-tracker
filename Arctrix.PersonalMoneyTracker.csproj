@@ -59,14 +59,28 @@
        don't reference it or compile ReportService; they register UnsupportedReportService. -->
   <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
     <PackageReference Include="QuestPDF" Version="2026.8.0" />
+    <!-- Telegram.Bot is used for one thing: sending the bot's replies. Incoming messages always come
+         through the relay repository, never from getUpdates (see TelegramBotService). -->
+    <PackageReference Include="Telegram.Bot" Version="22.10.3.1" />
+  </ItemGroup>
+
+  <!-- The Telegram bot is a Windows-app feature; phones aren't running the relay client. -->
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'windows'">
+    <Compile Remove="Services\Telegram\**\*.cs" />
+  </ItemGroup>
+
+  <!-- The bot token and GitHub PAT live in a gitignored file next to the project; copy it beside the
+       executable when it exists, so a build from source picks it up. It is never part of the repo. -->
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows' And Exists('$(MSBuildProjectDirectory)\telegram.local.json')">
+    <None Include="telegram.local.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'windows'">
     <Compile Remove="Services\ReportService.cs" />
   </ItemGroup>
 
-  <!-- Receipt scanning is mobile-only: desktop builds don't compile its OCR contract, pages or view models. -->
+  <!-- Receipt scanning has no desktop UI: Windows builds leave out its pages and view models. The OCR
+       contract itself is compiled there, because the Telegram bot reads receipts sent to it. -->
   <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
-    <Compile Remove="Services\IReceiptOcrService.cs" />
     <Compile Remove="ViewModels\ScanReceiptViewModel.cs" />
     <Compile Remove="ViewModels\ReceiptPhotoViewModel.cs" />
     <Compile Remove="Views\ScanReceiptPage.xaml.cs" />
