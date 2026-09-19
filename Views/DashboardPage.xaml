@@ -135,6 +135,13 @@
                         </HorizontalStackLayout>
                     </Border>
 
+                    <!-- Projected saving, with the basis right under it: it's an estimate from a few
+                         months of history, and it should never read as a promise. -->
+                    <VerticalStackLayout Spacing="1" IsVisible="{Binding ShowSavingsProjection}" Margin="2,2,0,0">
+                        <Label Text="{Binding SavingsProjectionLabel}" FontSize="13" FontFamily="InterMedium" TextColor="{StaticResource TextPrimary}" />
+                        <Label Text="{Binding SavingsBasisLabel}" Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+
                     <controls:TrendChart x:Name="NetWorthChart"
                                          Margin="0,12,0,0"
                                          HeightRequest="210"

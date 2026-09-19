@@ -62,6 +62,11 @@ public partial class DashboardViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(HasSpendingOthers))]
     public partial string SpendingOthersNote { get; set; } = string.Empty;
 
+    // Projected saving: an estimate from recent full months, with its basis always shown beside it.
+    [ObservableProperty] public partial string SavingsProjectionLabel { get; set; } = string.Empty;
+    [ObservableProperty] public partial string SavingsBasisLabel { get; set; } = string.Empty;
+    [ObservableProperty] public partial bool ShowSavingsProjection { get; set; }
+
     [ObservableProperty] public partial bool ShowRecentEmptyState { get; set; }
     [ObservableProperty] public partial bool ShowSpendingEmptyState { get; set; }
 
@@ -115,6 +120,11 @@ public partial class DashboardViewModel : ViewModelBase
             IncomeCaption = Caption(income);
             ExpenseText = expense.Primary.Amount.ToString("N2");
             ExpenseCaption = Caption(expense);
+
+            var outlook = await _transactions.GetSavingsOutlookAsync(now, BaseCurrency);
+            ShowSavingsProjection = true;
+            SavingsProjectionLabel = SavingsProjection(outlook);
+            SavingsBasisLabel = outlook.Basis;
 
             var spending = await _transactions.GetCategorySpendAsync(now.Year, now.Month);
             TopSpending.Clear();
@@ -175,6 +185,21 @@ public partial class DashboardViewModel : ViewModelBase
 
     private static Task GoToAddTransaction(TransactionType type) =>
         Shell.Current.GoToAsync($"{Routes.AddTransaction}?{Routes.TransactionTypeParam}={type}");
+
+    /// <summary>
+    /// The projected figure in words. Deliberately approximate - a tilde, no cents, and a plain
+    /// statement when a year at this rate would go backwards instead.
+    /// </summary>
+    public static string SavingsProjection(SavingsOutlook outlook)
+    {
+        if (!outlook.HasData)
+            return "No savings projection yet";
+
+        var yearly = Math.Abs(outlook.ProjectedAnnual);
+        return outlook.IsShortfall
+            ? $"At this rate, ~{outlook.Currency} {yearly:N0} short over a year"
+            : $"At this rate, ~{outlook.Currency} {yearly:N0} saved this year";
+    }
 
     /// <summary>"September · MYR", plus any amounts recorded under other base currencies.</summary>
     private string Caption(MoneySummary summary) => summary.HasOthers

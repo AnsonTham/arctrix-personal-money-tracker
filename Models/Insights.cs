@@ -28,6 +28,35 @@ public record MonthlyFlow(int Year, int Month, string Currency, decimal Income, 
 /// <summary>Net worth at the end of a month, in the currency it was requested in.</summary>
 public record MonthlyBalance(DateTime MonthStart, decimal Total);
 
+/// <summary>
+/// What a year of saving would come to if the recent past repeats: the average net flow of the
+/// last few full months, times twelve. The current month is left out because it is still running,
+/// and several months are averaged because one bonus or one big repair shouldn't set the figure
+/// for a whole year. It is an estimate, and <see cref="Basis"/> says what it rests on.
+/// </summary>
+public record SavingsOutlook(string Currency, decimal AverageMonthlyNet, int MonthsUsed)
+{
+    public static SavingsOutlook None(string currency) => new(currency, 0, 0);
+
+    public decimal ProjectedAnnual => AverageMonthlyNet * 12;
+
+    /// <summary>False until a full calendar month has been completed; nothing is projected before that.</summary>
+    public bool HasData => MonthsUsed > 0;
+
+    /// <summary>True once the full three months the figure is meant to average are available.</summary>
+    public bool IsFullHistory => MonthsUsed >= 3;
+
+    public bool IsShortfall => AverageMonthlyNet < 0;
+
+    public string Basis => MonthsUsed switch
+    {
+        0 => "Needs a full month of history first",
+        1 => "Based on your 1 full month so far - less than the 3 months this normally averages",
+        2 => "Based on your 2 full months so far - less than the 3 months this normally averages",
+        _ => $"Based on your last {MonthsUsed} full months"
+    };
+}
+
 /// <summary>Expense total for one category within a period, in one recorded base currency.</summary>
 public class CategorySpend
 {

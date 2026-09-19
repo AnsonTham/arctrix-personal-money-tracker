@@ -42,6 +42,13 @@ public interface ITransactionService
     Task<IReadOnlyList<CategorySpend>> GetCategorySpendAsync(int year, int month);
 
     /// <summary>
+    /// Average net saving across the last <paramref name="monthCount"/> full calendar months before
+    /// <paramref name="today"/>, expressed in <paramref name="currency"/>, with however many full
+    /// months actually exist when there is less history than that.
+    /// </summary>
+    Task<SavingsOutlook> GetSavingsOutlookAsync(DateTime today, string currency, int monthCount = 3);
+
+    /// <summary>
     /// Net worth of active accounts at the end of each of the <paramref name="monthCount"/> months
     /// ending with <paramref name="endMonth"/>'s month, oldest first. Worked back from today's
     /// balances through each transaction's per-account balance changes, all converted live into
@@ -186,6 +193,42 @@ public class TransactionService : ITransactionService
             })
             .OrderByDescending(c => c.Amount)
             .ToList();
+    }
+
+    public async Task<SavingsOutlook> GetSavingsOutlookAsync(DateTime today, string currency, int monthCount = 3)
+    {
+        await _db.InitializeAsync();
+        var all = await _db.Connection.Table<TransactionRecord>()
+            .Where(t => t.Type == TransactionType.Income || t.Type == TransactionType.Expense)
+            .ToListAsync();
+        if (all.Count == 0)
+            return SavingsOutlook.None(currency);
+
+        // The current month is still being lived in, so it can't stand for a typical month.
+        var thisMonth = new DateTime(today.Year, today.Month, 1);
+        var lastFullMonth = thisMonth.AddMonths(-1);
+        var firstMonthWithData = all.Min(t => new DateTime(t.Date.Year, t.Date.Month, 1));
+        if (firstMonthWithData > lastFullMonth)
+            return SavingsOutlook.None(currency);
+
+        // Quiet months between the first entry and now are real months of saving nothing, so they
+        // count; the window is calendar-based rather than data-based.
+        var monthsOfHistory = ((lastFullMonth.Year - firstMonthWithData.Year) * 12)
+            + lastFullMonth.Month - firstMonthWithData.Month + 1;
+        var monthsUsed = Math.Min(monthCount, monthsOfHistory);
+        var windowStart = lastFullMonth.AddMonths(1 - monthsUsed);
+
+        // Period totals are normally left in the base currency they were recorded in. A single
+        // projected figure can't be, so the months are converted at today's rates - one more reason
+        // the figure is presented as an estimate.
+        var net = all
+            .Where(t => t.Date >= windowStart && t.Date < thisMonth)
+            .Sum(t => _currency.Convert(
+                t.Type == TransactionType.Income ? t.BaseAmount : -t.BaseAmount,
+                t.BaseCurrencyAtEntry ?? currency,
+                currency));
+
+        return new SavingsOutlook(currency, net / monthsUsed, monthsUsed);
     }
 
     public async Task<IReadOnlyList<MonthlyBalance>> GetMonthEndNetWorthAsync(DateTime endMonth, int monthCount, string currency)
