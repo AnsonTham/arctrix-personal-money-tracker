@@ -12,3 +12,9 @@ obj/
 *.db3
 *.db3-shm
 *.db3-wal
+
+# Telegram bot + relay credentials: bot token and GitHub PAT.
+# Never committed - see telegram.local.example.json for the shape of this file.
+telegram.local.json
+*.local.json
+!*.local.example.json

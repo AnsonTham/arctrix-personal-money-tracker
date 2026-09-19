@@ -1,0 +1,8 @@
+{
+  "//": "Copy this file to telegram.local.json and fill in the values. telegram.local.json is gitignored and must never be committed.",
+  "botToken": "<BotFather token for the Arctrix bot - used only to send replies>",
+  "gitHubToken": "<fine-grained GitHub PAT, scoped to the arctrix-telegram-relay repository only: Contents read+write, Actions read+write>",
+  "ownerTelegramUserId": 0,
+  "relayRepository": "AnsonTham/arctrix-telegram-relay",
+  "relayBranch": "main"
+}
