@@ -47,6 +47,15 @@ public sealed class BotState
     /// <summary>True after /add, when the next message is expected to describe a transaction.</summary>
     public bool AwaitingEntry { get; set; }
 
+    /// <summary>
+    /// Set by /addexpense and /addincome so the entry that follows is recorded as that type even
+    /// when the words don't say which it is.
+    /// </summary>
+    public TransactionType? AwaitingEntryType { get; set; }
+
+    /// <summary>"amount" after the Edit amount button, when the next message is that new amount.</summary>
+    public string? AwaitingField { get; set; }
+
     public List<long> ProcessedUpdateIds { get; set; } = [];
 
     /// <summary>Last time the app successfully emptied the mailbox; null before the first run.</summary>

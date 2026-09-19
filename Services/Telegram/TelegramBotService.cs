@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Arctrix.PersonalMoneyTracker.Services.Telegram;
 
@@ -41,6 +43,7 @@ public sealed partial class TelegramBotService : IAsyncDisposable
     private readonly ISettingsService _appSettings;
     private readonly IReceiptPhotoStore _photos;
     private readonly IReceiptOcrService _ocr;
+    private readonly IRecurringPaymentService _recurring;
 
     private readonly BotState _state = BotState.Load();
     private readonly SemaphoreSlim _sync = new(1, 1);
@@ -58,7 +61,8 @@ public sealed partial class TelegramBotService : IAsyncDisposable
         ICurrencyService currency,
         ISettingsService appSettings,
         IReceiptPhotoStore photos,
-        IReceiptOcrService ocr)
+        IReceiptOcrService ocr,
+        IRecurringPaymentService recurring)
     {
         _settings = TelegramSettings.Load();
         _transactions = transactions;
@@ -68,6 +72,7 @@ public sealed partial class TelegramBotService : IAsyncDisposable
         _appSettings = appSettings;
         _photos = photos;
         _ocr = ocr;
+        _recurring = recurring;
     }
 
     /// <summary>False when the local config is missing or half filled in; the app then behaves as before.</summary>
@@ -97,6 +102,8 @@ public sealed partial class TelegramBotService : IAsyncDisposable
     {
         try
         {
+            await PublishCommandMenuAsync(cancellationToken);
+
             // Anything that arrived while the app was closed is already waiting; read it first, so
             // the welcome-back summary covers it before anything new is collected.
             await CatchUpAsync(cancellationToken);
@@ -128,6 +135,10 @@ public sealed partial class TelegramBotService : IAsyncDisposable
         var gap = _state.LastPullUtc is { } last ? DateTime.UtcNow - last : (TimeSpan?)null;
 
         await WarnIfRelayStalledAsync(cancellationToken);
+
+        // Due payments are normally posted by the Dashboard; running them here as well means a
+        // subscription that can't be paid is reported even on a day the app is never looked at.
+        await RunDuePaymentsAsync(cancellationToken);
 
         var handled = await SyncAsync(cancellationToken);
         if (handled > 0 && gap is null or { TotalHours: > 3 })
@@ -269,19 +280,80 @@ public sealed partial class TelegramBotService : IAsyncDisposable
             cancellationToken);
     }
 
-    private async Task SendAsync(long chatId, string text, CancellationToken cancellationToken)
+    private async Task SendAsync(long chatId, string text, CancellationToken cancellationToken, InlineKeyboardMarkup? buttons = null)
     {
         if (_bot is null)
             return;
 
         try
         {
-            await _bot.SendMessage(chatId, text, cancellationToken: cancellationToken);
+            await _bot.SendMessage(chatId, text, replyMarkup: buttons, cancellationToken: cancellationToken);
         }
         catch (Exception ex)
         {
             // A reply that doesn't arrive must not stop the message being processed.
             Debug.WriteLine($"Couldn't send a Telegram reply: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Clears the spinner on a tapped button, and takes the buttons off the message they belonged to
+    /// so a stale question can't be answered twice.
+    /// </summary>
+    private async Task AcknowledgeAsync(RelayUpdate update, CancellationToken cancellationToken, string? toast = null)
+    {
+        if (_bot is null || update.CallbackId is null)
+            return;
+
+        try
+        {
+            await _bot.AnswerCallbackQuery(update.CallbackId, toast ?? string.Empty, cancellationToken: cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // Telegram forgets a callback id after about a minute, and a tap reaches the app through
+            // the relay rather than instantly - so this often fails by design. The tap still counts;
+            // taking the buttons away below is what the user actually sees.
+            Debug.WriteLine($"Couldn't acknowledge a button tap: {ex.Message}");
+        }
+
+        if (update.MessageId is not int messageId)
+            return;
+
+        try
+        {
+            await _bot.EditMessageReplyMarkup(update.ChatId, messageId, replyMarkup: null, cancellationToken: cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Couldn't clear the buttons on message {messageId}: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Fills Telegram's "/" menu. Done through the API rather than by hand in BotFather, so the menu
+    /// can't drift away from the commands the app actually implements.
+    /// </summary>
+    private async Task PublishCommandMenuAsync(CancellationToken cancellationToken)
+    {
+        if (_bot is null)
+            return;
+
+        try
+        {
+            await _bot.SetMyCommands(
+                [
+                    new BotCommand { Command = "balance", Description = "Account balances and net worth" },
+                    new BotCommand { Command = "addexpense", Description = "Record an expense" },
+                    new BotCommand { Command = "addincome", Description = "Record income" },
+                    new BotCommand { Command = "subscriptions", Description = "Recurring payments, and cancel one" },
+                    new BotCommand { Command = "savings", Description = "Projected savings at this rate" }
+                ],
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Couldn't publish the command menu: {ex.Message}");
         }
     }
 
