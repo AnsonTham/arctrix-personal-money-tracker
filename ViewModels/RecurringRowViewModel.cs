@@ -11,6 +11,16 @@ public class RecurringRowViewModel
     public string CategoryIcon { get; init; } = CategoryIcons.Other;
     public string AccountName { get; init; } = string.Empty;
 
+    /// <summary>The occurrence waiting on funds, when there is one; it is retried on every run.</summary>
+    public RecurringSkip? Skip { get; init; }
+
+    public bool HasSkip => Skip is not null;
+
+    public string SkipLabel => Skip is null
+        ? string.Empty
+        : $"Skipped {Skip.DueDate:d MMM} - not enough in {AccountName} "
+          + $"({Skip.Currency} {Skip.Balance:N2} of {Skip.Currency} {Skip.Amount:N2}). Retries when topped up.";
+
     public string CategoryIconFile => CategoryIcons.FileFor(CategoryIcon);
 
     public string Name => Payment.Name;

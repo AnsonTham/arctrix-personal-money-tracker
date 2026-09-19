@@ -70,7 +70,7 @@
 
                             <!-- Name and amount on top; the schedule gets the full text width so it never
                                  truncates; due date and Stop share the last row, away from the amount. -->
-                            <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="2">
+                            <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="2">
                                 <Border Grid.RowSpan="2" Style="{StaticResource IconTile}" VerticalOptions="Start">
                                     <Image Source="{Binding CategoryIconFile}" WidthRequest="20" HeightRequest="20" HorizontalOptions="Center" VerticalOptions="Center" />
                                 </Border>
@@ -113,6 +113,17 @@
                                                  x:DataType="vm:RecurringViewModel" />
                                     </Button.Command>
                                 </Button>
+
+                                <!-- Only present while an occurrence is waiting on funds; it says what is
+                                     missing rather than quietly letting the account go negative. -->
+                                <Label Grid.Row="3"
+                                       Grid.Column="1"
+                                       Grid.ColumnSpan="2"
+                                       Text="{Binding SkipLabel}"
+                                       IsVisible="{Binding HasSkip}"
+                                       Style="{StaticResource Caption}"
+                                       TextColor="{StaticResource Negative}"
+                                       Margin="0,4,0,0" />
                             </Grid>
                         </Border>
                     </DataTemplate>

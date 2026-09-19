@@ -301,22 +301,53 @@ public partial class AddEditTransactionViewModel : ViewModelBase, IQueryAttribut
             CreatedAt = _editing?.CreatedAt ?? DateTime.Now
         };
 
+        if (!await TrySaveAsync(record, allowOverdraw: false))
+            return;
+
+        _saved = true;
+        await Shell.Current.GoToAsync("..");
+    }
+
+    /// <summary>
+    /// Saves, and when the account can't cover it, says so and offers to record it anyway - an entry
+    /// the user is making by hand may well be a genuine overdraft, or a balance that has drifted.
+    /// The automatic recurring poster never gets this choice.
+    /// </summary>
+    private async Task<bool> TrySaveAsync(TransactionRecord record, bool allowOverdraw)
+    {
         try
         {
             if (_editing is null)
-                await _transactions.AddAsync(record);
+                await _transactions.AddAsync(record, allowOverdraw);
             else
-                await _transactions.UpdateAsync(_editing, record);
+                await _transactions.UpdateAsync(_editing, record, allowOverdraw);
+            return true;
+        }
+        catch (InsufficientFundsException shortfall) when (!allowOverdraw)
+        {
+            // Nothing was written: the whole save is one database transaction.
+            var saveAnyway = await Shell.Current.DisplayAlertAsync(
+                "Not enough in that account",
+                $"{shortfall.AccountName} holds {shortfall.Currency} {shortfall.Balance:N2}, and this needs "
+                + $"{shortfall.Currency} {shortfall.Required:N2}. Saving it would leave the account at "
+                + $"{shortfall.Currency} {-shortfall.Shortfall:N2}.",
+                "Save anyway",
+                "Go back");
+
+            if (!saveAnyway)
+            {
+                ErrorMessage = $"{shortfall.AccountName} is short by {shortfall.Currency} {shortfall.Shortfall:N2}.";
+                return false;
+            }
+
+            return await TrySaveAsync(record, allowOverdraw: true);
         }
         catch (Exception ex)
         {
             // The save is atomic, so nothing was written; keep the form open with its values.
             ErrorMessage = $"Couldn't save this transaction: {ex.Message}";
-            return;
+            return false;
         }
-
-        _saved = true;
-        await Shell.Current.GoToAsync("..");
     }
 
     [RelayCommand]

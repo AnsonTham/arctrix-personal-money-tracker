@@ -50,17 +50,24 @@ public partial class RecurringViewModel : ViewModelBase
             var categories = (await _categories.GetAllAsync(includeArchived: true)).ToDictionary(c => c.Id);
             var accounts = (await _accounts.GetAllAsync(includeArchived: true)).ToDictionary(a => a.Id);
 
+            // The oldest unpaid occurrence is the one being retried, so that's the one to show.
+            var skips = (await _recurring.GetUnresolvedSkipsAsync())
+                .GroupBy(s => s.RecurringPaymentId)
+                .ToDictionary(g => g.Key, g => g.OrderBy(s => s.DueDate).First());
+
             Payments.Clear();
             foreach (var payment in payments)
             {
                 categories.TryGetValue(payment.CategoryId, out var category);
                 accounts.TryGetValue(payment.AccountId, out var account);
+                skips.TryGetValue(payment.Id, out var skip);
                 Payments.Add(new RecurringRowViewModel
                 {
                     Payment = payment,
                     CategoryName = category?.Name ?? "Others",
                     CategoryIcon = category?.Icon ?? CategoryIcons.Other,
-                    AccountName = account?.Name ?? string.Empty
+                    AccountName = account?.Name ?? string.Empty,
+                    Skip = skip
                 });
             }
 

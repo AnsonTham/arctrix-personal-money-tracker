@@ -10,21 +10,51 @@ namespace Arctrix.PersonalMoneyTracker.Services;
 /// </summary>
 internal static class BalanceLedger
 {
-    public static void Insert(SQLiteConnection conn, TransactionRecord transaction, ICurrencyService currency)
+    public static void Insert(SQLiteConnection conn, TransactionRecord transaction, ICurrencyService currency, bool allowOverdraw = false)
     {
         SetAccountAmounts(conn, transaction, currency);
+        RequireFunds(conn, transaction, allowOverdraw);
         conn.Insert(transaction);
         Apply(conn, transaction, sign: 1);
     }
 
     /// <summary>Reverses the stored row's effect, applies the updated one, and saves it.</summary>
-    public static void Update(SQLiteConnection conn, TransactionRecord original, TransactionRecord updated, ICurrencyService currency)
+    public static void Update(SQLiteConnection conn, TransactionRecord original, TransactionRecord updated, ICurrencyService currency, bool allowOverdraw = false)
     {
         // Reverse what is actually stored, not a copy the caller loaded earlier.
         Apply(conn, conn.Find<TransactionRecord>(updated.Id) ?? original, sign: -1);
         SetAccountAmounts(conn, updated, currency);
+        RequireFunds(conn, updated, allowOverdraw);
         Apply(conn, updated, sign: 1);
         conn.Update(updated);
+    }
+
+    /// <summary>
+    /// Refuses a transaction that would take an account below zero. This sits here, rather than in
+    /// the callers, because every write path - the form, receipt scanning, the Telegram bot and the
+    /// recurring auto-poster - reaches the database through Insert and Update: a path that forgets
+    /// to check cannot exist. Throwing inside the caller's database transaction rolls back the row
+    /// and the balances together.
+    ///
+    /// Amounts here are already in each account's own currency (see <see cref="SetAccountAmounts"/>).
+    /// </summary>
+    private static void RequireFunds(SQLiteConnection conn, TransactionRecord transaction, bool allowOverdraw)
+    {
+        if (allowOverdraw)
+            return;
+
+        foreach (var (accountId, delta) in Effects(transaction))
+        {
+            if (delta >= 0)
+                continue;
+
+            var account = conn.Find<Account>(accountId);
+            // A missing account can't be overdrawn; Apply skips it too.
+            if (account is null || account.Balance + delta >= 0)
+                continue;
+
+            throw new InsufficientFundsException(account.Name, account.Currency, account.Balance, -delta);
+        }
     }
 
     /// <summary>Reverses the stored row's effect and deletes it. A no-op if it's already gone.</summary>

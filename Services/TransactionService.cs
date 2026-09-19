@@ -13,11 +13,17 @@ public interface ITransactionService
     /// <summary>
     /// Inserts a transaction and applies its effect to the affected account balance(s), atomically.
     /// BaseCurrencyAtEntry must be set to the currency BaseAmount was computed in.
+    /// Throws <see cref="InsufficientFundsException"/> when it would take an account below zero,
+    /// unless <paramref name="allowOverdraw"/> is set - which callers only do once the user has
+    /// seen the shortfall and said to save it anyway.
     /// </summary>
-    Task AddAsync(TransactionRecord transaction);
+    Task AddAsync(TransactionRecord transaction, bool allowOverdraw = false);
 
-    /// <summary>Reverses the stored balance effect, applies the new one, and saves the row, atomically.</summary>
-    Task UpdateAsync(TransactionRecord original, TransactionRecord updated);
+    /// <summary>
+    /// Reverses the stored balance effect, applies the new one, and saves the row, atomically.
+    /// Overdraws are refused the same way <see cref="AddAsync"/> refuses them.
+    /// </summary>
+    Task UpdateAsync(TransactionRecord original, TransactionRecord updated, bool allowOverdraw = false);
 
     /// <summary>Reverses the balance effect and deletes the row, atomically, then removes its receipt photo.</summary>
     Task DeleteAsync(TransactionRecord transaction);
@@ -92,18 +98,18 @@ public class TransactionService : ITransactionService
         return await _db.Connection.Table<TransactionRecord>().FirstOrDefaultAsync(t => t.Id == id);
     }
 
-    public async Task AddAsync(TransactionRecord transaction)
+    public async Task AddAsync(TransactionRecord transaction, bool allowOverdraw = false)
     {
         RequireRecordedCurrency(transaction);
         await _db.InitializeAsync();
-        await _db.Connection.RunInTransactionAsync(conn => BalanceLedger.Insert(conn, transaction, _currency));
+        await _db.Connection.RunInTransactionAsync(conn => BalanceLedger.Insert(conn, transaction, _currency, allowOverdraw));
     }
 
-    public async Task UpdateAsync(TransactionRecord original, TransactionRecord updated)
+    public async Task UpdateAsync(TransactionRecord original, TransactionRecord updated, bool allowOverdraw = false)
     {
         RequireRecordedCurrency(updated);
         await _db.InitializeAsync();
-        await _db.Connection.RunInTransactionAsync(conn => BalanceLedger.Update(conn, original, updated, _currency));
+        await _db.Connection.RunInTransactionAsync(conn => BalanceLedger.Update(conn, original, updated, _currency, allowOverdraw));
     }
 
     public async Task DeleteAsync(TransactionRecord transaction)
