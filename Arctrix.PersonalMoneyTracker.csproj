@@ -21,6 +21,11 @@
 
     <WindowsPackageType>None</WindowsPackageType>
 
+    <!-- The executable's own icon, which is what the taskbar, alt-tab and any shortcut show.
+         MauiIcon generates one too, but only at 32x32, which is coarse anywhere it is drawn larger;
+         this is the multi-size file built by tools\make-app-icon.ps1. -->
+    <ApplicationIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">Resources\AppIcon\arctrix.ico</ApplicationIcon>
+
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.19041.0</SupportedOSPlatformVersion>
