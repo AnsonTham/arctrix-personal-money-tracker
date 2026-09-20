@@ -22,6 +22,7 @@ public partial class AppShell : Shell
         // Forms reachable from anywhere; pushed onto the current section's stack.
         Routing.RegisterRoute(Routes.AddTransaction, typeof(AddEditTransactionPage));
         Routing.RegisterRoute(Routes.AddAccount, typeof(AddAccountPage));
+        Routing.RegisterRoute(Routes.EditAccount, typeof(EditAccountPage));
         Routing.RegisterRoute(Routes.AddRecurring, typeof(AddRecurringPage));
         Routing.RegisterRoute(Routes.AddPrepaidCredit, typeof(AddPrepaidCreditPage));
 #if ANDROID || IOS

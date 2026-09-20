@@ -13,6 +13,7 @@ public static class Routes
 
     public const string AddTransaction = "addtransaction";
     public const string AddAccount = "addaccount";
+    public const string EditAccount = "editaccount";
     public const string AddRecurring = "addrecurring";
     public const string AddPrepaidCredit = "addprepaidcredit";
 
@@ -27,6 +28,7 @@ public static class Routes
     public const string TransactionTypeParam = "type";
     public const string TransactionIdParam = "id";
     public const string PrepaidCreditIdParam = "creditid";
+    public const string AccountIdParam = "accountid";
     public const string ReceiptScanParam = "receiptscan";
     public const string ReceiptPathParam = "receiptpath";
 }

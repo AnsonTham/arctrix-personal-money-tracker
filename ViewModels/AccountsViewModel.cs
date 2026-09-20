@@ -63,6 +63,10 @@ public partial class AccountsViewModel : ViewModelBase
     private Task AddAccount() => Shell.Current.GoToAsync(Routes.AddAccount);
 
     [RelayCommand]
+    private Task EditAccount(Account account) =>
+        Shell.Current.GoToAsync($"{Routes.EditAccount}?{Routes.AccountIdParam}={account.Id}");
+
+    [RelayCommand]
     private async Task Archive(Account account)
     {
         var confirmed = await Shell.Current.DisplayAlertAsync(
