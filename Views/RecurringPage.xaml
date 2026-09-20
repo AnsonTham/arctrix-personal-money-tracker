@@ -28,8 +28,8 @@
                         <Setter Property="RowSpacing" Value="12" />
 
                         <Setter TargetName="Header" Property="Margin" Value="4,16,4,0" />
-                        <Setter TargetName="SummaryCard" Property="Grid.Row" Value="1" />
-                        <Setter TargetName="SummaryCard" Property="Grid.Column" Value="0" />
+                        <Setter TargetName="SummaryColumn" Property="Grid.Row" Value="1" />
+                        <Setter TargetName="SummaryColumn" Property="Grid.Column" Value="0" />
                         <Setter TargetName="ListCard" Property="Grid.Row" Value="2" />
                     </VisualState.Setters>
                 </VisualState>
@@ -141,10 +141,9 @@
             </CollectionView>
         </Border>
 
-        <!-- Summary -->
+        <!-- Summary, and the prepaid pools that cover some of these payments -->
+        <VerticalStackLayout x:Name="SummaryColumn" Grid.Row="1" Grid.Column="1" Spacing="20" VerticalOptions="Start">
         <Border x:Name="SummaryCard"
-                Grid.Row="1"
-                Grid.Column="1"
                 Style="{StaticResource Card}"
                 VerticalOptions="Start">
             <VerticalStackLayout Spacing="18">
@@ -180,6 +179,72 @@
                 </VerticalStackLayout>
             </VerticalStackLayout>
         </Border>
+
+        <!-- Prepaid credit: money collected upfront, counted down month by month. Nothing here
+             posts a transaction - the lump sum is ordinary income and the subscription it covers
+             keeps posting as it always did. -->
+        <Border x:Name="PrepaidCard" Style="{StaticResource Card}" VerticalOptions="Start">
+            <VerticalStackLayout Spacing="16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Text="Prepaid credit" Style="{StaticResource Overline}" VerticalOptions="Center" />
+                    <Button Grid.Column="1"
+                            Text="Add"
+                            Style="{StaticResource SecondaryButton}"
+                            FontSize="13"
+                            Padding="14,0"
+                            MinimumWidthRequest="48"
+                            VerticalOptions="Center"
+                            Command="{Binding AddPrepaidCreditCommand}" />
+                </Grid>
+
+                <Label Text="Nothing prepaid right now. Add a lump sum you've collected that covers several months."
+                       Style="{StaticResource Caption}"
+                       IsVisible="{Binding ShowPrepaidEmptyState}" />
+
+                <VerticalStackLayout Spacing="18" BindableLayout.ItemsSource="{Binding PrepaidCredits}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PrepaidCreditRowViewModel">
+                            <VerticalStackLayout Spacing="6">
+                                <VerticalStackLayout.GestureRecognizers>
+                                    <TapGestureRecognizer CommandParameter="{Binding .}">
+                                        <TapGestureRecognizer.Command>
+                                            <Binding Path="EditPrepaidCreditCommand"
+                                                     Source="{RelativeSource AncestorType={x:Type vm:RecurringViewModel}}"
+                                                     x:DataType="vm:RecurringViewModel" />
+                                        </TapGestureRecognizer.Command>
+                                    </TapGestureRecognizer>
+                                </VerticalStackLayout.GestureRecognizers>
+
+                                <Label Text="{Binding Name}" Style="{StaticResource BodyStrong}" MaxLines="2" LineBreakMode="TailTruncation" />
+
+                                <Label Text="{Binding LinkedLabel}"
+                                       Style="{StaticResource Caption}"
+                                       IsVisible="{Binding HasLinkedPayment}" />
+
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Label Text="{Binding UsageLabel}" Style="{StaticResource Caption}" VerticalOptions="Center" />
+                                    <Label Grid.Column="1" Text="{Binding RemainingLabel}" Style="{StaticResource Amount}" FontSize="14" VerticalOptions="Center" />
+                                </Grid>
+
+                                <controls:ProportionBar Value="{Binding UsedShare}"
+                                                        BarColor="{StaticResource Accent}"
+                                                        TrackColor="{StaticResource Surface3}" />
+
+                                <Label Text="{Binding NoticeLabel}" Style="{StaticResource Caption}">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsNoticeUrgent}" Value="True">
+                                            <Setter Property="TextColor" Value="{StaticResource Negative}" />
+                                            <Setter Property="FontFamily" Value="InterSemiBold" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                            </VerticalStackLayout>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </Border>
+        </VerticalStackLayout>
 
     </Grid>
 

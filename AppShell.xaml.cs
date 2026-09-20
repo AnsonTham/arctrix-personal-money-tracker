@@ -23,6 +23,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(Routes.AddTransaction, typeof(AddEditTransactionPage));
         Routing.RegisterRoute(Routes.AddAccount, typeof(AddAccountPage));
         Routing.RegisterRoute(Routes.AddRecurring, typeof(AddRecurringPage));
+        Routing.RegisterRoute(Routes.AddPrepaidCredit, typeof(AddPrepaidCreditPage));
 #if ANDROID || IOS
         // Receipt scanning is mobile-only; desktop builds don't include these pages.
         Routing.RegisterRoute(Routes.ScanReceipt, typeof(ScanReceiptPage));

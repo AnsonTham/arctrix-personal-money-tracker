@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:views="clr-namespace:Arctrix.PersonalMoneyTracker.Views"
+             xmlns:controls="clr-namespace:Arctrix.PersonalMoneyTracker.Controls"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Arctrix.PersonalMoneyTracker.ViewModels"
+             xmlns:models="clr-namespace:Arctrix.PersonalMoneyTracker.Models"
+             x:Class="Arctrix.PersonalMoneyTracker.Views.AddPrepaidCreditPage"
+             x:DataType="vm:AddPrepaidCreditViewModel"
+             Title="{Binding Title}">
+
+    <ScrollView>
+        <Grid x:Name="LayoutRoot" HorizontalOptions="Center" Padding="32,28,32,40" RowDefinitions="Auto,Auto" RowSpacing="20">
+
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="LayoutStates">
+                    <VisualState x:Name="Wide" />
+                    <VisualState x:Name="Narrow">
+                        <VisualState.Setters>
+                            <Setter Property="Padding" Value="{StaticResource PagePaddingPhone}" />
+                            <Setter Property="RowSpacing" Value="16" />
+                            <Setter TargetName="Header" Property="Margin" Value="0,8,0,0" />
+                            <Setter TargetName="FormCard" Property="Padding" Value="18" />
+                            <Setter TargetName="AmountRow" Property="Grid.ColumnDefinitions" Value="*" />
+                            <Setter TargetName="AmountRow" Property="Grid.RowDefinitions" Value="Auto,Auto" />
+                            <Setter TargetName="MonthsField" Property="Grid.Column" Value="0" />
+                            <Setter TargetName="MonthsField" Property="Grid.Row" Value="1" />
+                            <Setter TargetName="ActionsGrid" Property="Grid.ColumnDefinitions" Value="*" />
+                            <Setter TargetName="ActionsGrid" Property="Grid.RowDefinitions" Value="Auto,Auto,Auto" />
+                            <Setter TargetName="CloseButton" Property="Grid.Column" Value="0" />
+                            <Setter TargetName="CancelButton" Property="Grid.Column" Value="0" />
+                            <Setter TargetName="CancelButton" Property="Grid.Row" Value="1" />
+                            <Setter TargetName="SaveButton" Property="Grid.Column" Value="0" />
+                            <Setter TargetName="SaveButton" Property="Grid.Row" Value="2" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+
+            <Grid x:Name="Header" ColumnDefinitions="Auto,*">
+                <controls:BackButton />
+                <Label Grid.Column="1" Text="{Binding Title}" Style="{StaticResource H1}" VerticalOptions="Center" />
+            </Grid>
+
+            <Border x:Name="FormCard" Grid.Row="1" Style="{StaticResource Card}" Padding="28" VerticalOptions="Start">
+                <VerticalStackLayout Spacing="24">
+
+                    <Label Text="Money collected upfront that covers several months - friends' shares of a plan, say. Recording it here changes no balances: enter the payment itself as ordinary income."
+                           Style="{StaticResource Body}" />
+
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Name" Style="{StaticResource Overline}" />
+                        <Border Style="{StaticResource InputShell}">
+                            <Entry Text="{Binding Name}" Placeholder="e.g. YouTube Premium - shared with friends" MaxLength="80" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <Grid x:Name="AmountRow" ColumnDefinitions="*,150" ColumnSpacing="16" RowSpacing="16">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="Amount received" Style="{StaticResource Overline}" />
+                            <Border Style="{StaticResource InputShell}">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                    <Label Text="{Binding BaseCurrency}" FontFamily="InterSemiBold" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                                    <Entry Grid.Column="1" Text="{Binding AmountText}" Placeholder="0.00" Keyboard="Numeric" />
+                                </Grid>
+                            </Border>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout x:Name="MonthsField" Grid.Column="1" Spacing="10">
+                            <Label Text="Months covered" Style="{StaticResource Overline}" />
+                            <Border Style="{StaticResource InputShell}">
+                                <Entry Text="{Binding MonthsText}" Placeholder="12" Keyboard="Numeric" />
+                            </Border>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Started" Style="{StaticResource Overline}" />
+                        <Border Style="{StaticResource InputShell}">
+                            <DatePicker Date="{Binding StartDate}" Format="d MMM yyyy" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Linked subscription (optional)" Style="{StaticResource Overline}" />
+                        <Border Style="{StaticResource InputShell}">
+                            <controls:PickerField>
+                                <Picker Title="{OnPlatform Default='Not linked', WinUI={x:Null}}"
+                                        ItemsSource="{Binding LinkOptions}"
+                                        SelectedItem="{Binding LinkedPayment}">
+                                    <Picker.ItemDisplayBinding>
+                                        <Binding Path="Name" x:DataType="models:RecurringPayment" />
+                                    </Picker.ItemDisplayBinding>
+                                </Picker>
+                            </controls:PickerField>
+                        </Border>
+                        <Label Text="Shown on the card for reference. It does not change how that subscription posts."
+                               Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+
+                    <Label Text="{Binding PreviewLabel}" Style="{StaticResource Body}" />
+
+                    <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorText}" IsVisible="{Binding HasError}" />
+
+                    <Grid x:Name="ActionsGrid" ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+                        <Button x:Name="CloseButton"
+                                Text="Close credit"
+                                Style="{StaticResource GhostButton}"
+                                IsVisible="{Binding IsEditing}"
+                                Command="{Binding CloseCommand}" />
+                        <Button x:Name="CancelButton" Grid.Column="2" Text="Cancel" Style="{StaticResource GhostButton}" Command="{Binding CancelCommand}" />
+                        <Button x:Name="SaveButton" Grid.Column="3" Text="{Binding SaveLabel}" Command="{Binding SaveCommand}" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+    </ScrollView>
+
+</views:AppPage>

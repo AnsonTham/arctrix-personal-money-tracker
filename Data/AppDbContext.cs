@@ -34,6 +34,7 @@ public class AppDbContext
         await _connection.CreateTableAsync<TransactionRecord>();
         await _connection.CreateTableAsync<RecurringPayment>();
         await _connection.CreateTableAsync<RecurringSkip>();
+        await _connection.CreateTableAsync<PrepaidCredit>();
         await _connection.CreateTableAsync<AppSettings>();
 
         await SeedIfEmptyAsync();

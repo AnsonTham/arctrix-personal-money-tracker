@@ -46,6 +46,7 @@ public sealed partial class TelegramBotService : IAsyncDisposable
     private readonly IReceiptPhotoStore _photos;
     private readonly IReceiptOcrService _ocr;
     private readonly IRecurringPaymentService _recurring;
+    private readonly IPrepaidCreditService _credits;
 
     private readonly BotState _state = BotState.Load();
     private readonly SemaphoreSlim _sync = new(1, 1);
@@ -64,7 +65,8 @@ public sealed partial class TelegramBotService : IAsyncDisposable
         ISettingsService appSettings,
         IReceiptPhotoStore photos,
         IReceiptOcrService ocr,
-        IRecurringPaymentService recurring)
+        IRecurringPaymentService recurring,
+        IPrepaidCreditService credits)
     {
         _settings = TelegramSettings.Load();
         _transactions = transactions;
@@ -75,6 +77,7 @@ public sealed partial class TelegramBotService : IAsyncDisposable
         _photos = photos;
         _ocr = ocr;
         _recurring = recurring;
+        _credits = credits;
     }
 
     /// <summary>False when the local config is missing or half filled in; the app then behaves as before.</summary>
@@ -143,6 +146,7 @@ public sealed partial class TelegramBotService : IAsyncDisposable
         // Due payments are normally posted by the Dashboard; running them here as well means a
         // subscription that can't be paid is reported even on a day the app is never looked at.
         await RunDuePaymentsAsync(cancellationToken);
+        await ReportPrepaidCollectionsAsync(cancellationToken);
 
         var handled = await SyncAsync(cancellationToken);
         if (handled > 0 && gap is null or { TotalHours: > 3 })

@@ -766,6 +766,42 @@ public sealed partial class TelegramBotService
             skip.NotifiedAt is not { } told || DateTime.Now - told > TimeSpan.FromDays(7);
     }
 
+    /// <summary>
+    /// Tells the user when a prepaid pool has run out and the next round needs collecting. Purely a
+    /// reminder: no transaction is created here, because the money itself is recorded when it
+    /// actually arrives.
+    /// </summary>
+    private async Task ReportPrepaidCollectionsAsync(CancellationToken cancellationToken)
+    {
+        List<PrepaidCredit> due;
+        try
+        {
+            due = await _credits.GetDueForCollectionAsync(DateTime.Today);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Couldn't check the prepaid credits: {ex.Message}");
+            return;
+        }
+
+        if (due.Count == 0)
+            return;
+
+        foreach (var credit in due)
+        {
+            var status = credit.StatusOn(DateTime.Today);
+            await SendAsync(
+                _settings.OwnerTelegramUserId,
+                $"{credit.Name} has run out: all {status.MonthsCovered} months of the "
+                + $"{Money(credit.TotalAmount, credit.Currency)} collected on {credit.StartDate:d MMM yyyy} are used up.\n\n"
+                + "Time to collect from friends again. Record the new lump sum as ordinary income, then update the "
+                + "credit's start date in the app - nothing has been posted for you.",
+                cancellationToken);
+        }
+
+        await _credits.MarkCollectionNotifiedAsync(due);
+    }
+
     private async Task ReportShortfallAsync(RecurringSkip skip, CancellationToken cancellationToken)
     {
         var payment = (await _recurring.GetAllAsync(includeInactive: true)).FirstOrDefault(p => p.Id == skip.RecurringPaymentId);
