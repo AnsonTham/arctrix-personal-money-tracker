@@ -75,9 +75,13 @@
   </ItemGroup>
 
   <!-- The bot token and GitHub PAT live in a gitignored file next to the project; copy it beside the
-       executable when it exists, so a build from source picks it up. It is never part of the repo. -->
+       executable when it exists, so a build from source picks it up. It is never part of the repo.
+
+       CopyToPublishDirectory is Never on purpose: a published folder is the thing that gets copied
+       onto another machine, and secrets must not travel with it. A published app reads the same
+       file from the app data folder instead (see TelegramSettings.Load). -->
   <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows' And Exists('$(MSBuildProjectDirectory)\telegram.local.json')">
-    <None Include="telegram.local.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="telegram.local.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
   </ItemGroup>
   <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'windows'">
     <Compile Remove="Services\ReportService.cs" />
