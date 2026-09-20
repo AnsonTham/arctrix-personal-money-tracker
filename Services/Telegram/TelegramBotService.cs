@@ -15,17 +15,19 @@ namespace Arctrix.PersonalMoneyTracker.Services.Telegram;
 /// </summary>
 public sealed partial class TelegramBotService : IAsyncDisposable
 {
-    // A message is answered within about a minute while a question is open, and the mailbox is
-    // checked every half hour otherwise. Each check costs one Actions run on a private repo, so the
-    // idle figure is deliberately coarse; the relay's own schedule covers everything in between.
-    private static readonly TimeSpan ActiveInterval = TimeSpan.FromSeconds(60);
+    // Each check costs one Actions run, billed as a whole minute, against the 2,000 a month a
+    // private repository gets free. So the mailbox is checked every 90 seconds while a conversation
+    // is going and every half hour otherwise: a busy day of three bursts plus twelve idle hours
+    // comes to roughly 45 runs, about 1,400 a month. The cost of that thrift is the first message
+    // after a quiet spell, which can wait for the idle check; everything after it is prompt.
+    private static readonly TimeSpan ActiveInterval = TimeSpan.FromSeconds(90);
     private static readonly TimeSpan IdleInterval = TimeSpan.FromMinutes(30);
 
     /// <summary>How long a relay run takes to collect and push before its result is worth reading.</summary>
     private static readonly TimeSpan CollectionDelay = TimeSpan.FromSeconds(45);
 
     /// <summary>A conversation counts as active for this long after the last message.</summary>
-    private static readonly TimeSpan ConversationWindow = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan ConversationWindow = TimeSpan.FromMinutes(10);
 
     /// <summary>Gap after which the user is welcomed back with a summary instead of a bare reply.</summary>
     private static readonly TimeSpan WelcomeBackGap = TimeSpan.FromHours(3);
@@ -125,9 +127,11 @@ public sealed partial class TelegramBotService : IAsyncDisposable
         }
     }
 
-    private bool IsConversationActive =>
-        (_state.ActiveDraft is not null || _state.AwaitingEntry)
-        && DateTime.UtcNow - _lastConversationUtc < ConversationWindow;
+    /// <summary>
+    /// Any message at all starts a conversation, not just one that left a question open: a /balance
+    /// is usually followed by something else, and waiting half an hour for that would be absurd.
+    /// </summary>
+    private bool IsConversationActive => DateTime.UtcNow - _lastConversationUtc < ConversationWindow;
 
     /// <summary>Empties the mailbox, warns about a stalled relay, and summarises a long absence.</summary>
     private async Task CatchUpAsync(CancellationToken cancellationToken)
