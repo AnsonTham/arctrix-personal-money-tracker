@@ -23,6 +23,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(Routes.AddTransaction, typeof(AddEditTransactionPage));
         Routing.RegisterRoute(Routes.AddAccount, typeof(AddAccountPage));
         Routing.RegisterRoute(Routes.EditAccount, typeof(EditAccountPage));
+        Routing.RegisterRoute(Routes.PublicHolidays, typeof(PublicHolidaysPage));
         Routing.RegisterRoute(Routes.AddRecurring, typeof(AddRecurringPage));
         Routing.RegisterRoute(Routes.AddPrepaidCredit, typeof(AddPrepaidCreditPage));
 #if ANDROID || IOS

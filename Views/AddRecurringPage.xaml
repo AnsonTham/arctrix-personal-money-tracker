@@ -154,6 +154,12 @@
                         </VerticalStackLayout>
                     </Grid>
 
+                    <!-- The working-day rule needs no picker: the date comes from the calendar and
+                         the holiday list, not from anything chosen here. -->
+                    <Label Text="Pays on the last working day of the month, stepping back over weekends and the public holidays you've listed in Settings."
+                           Style="{StaticResource Body}"
+                           IsVisible="{Binding UsesLastWorkingDay}" />
+
                     <VerticalStackLayout Spacing="10">
                         <Label Text="Account" Style="{StaticResource Overline}" />
                         <Border Style="{StaticResource InputShell}">

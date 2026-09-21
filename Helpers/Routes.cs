@@ -14,6 +14,7 @@ public static class Routes
     public const string AddTransaction = "addtransaction";
     public const string AddAccount = "addaccount";
     public const string EditAccount = "editaccount";
+    public const string PublicHolidays = "publicholidays";
     public const string AddRecurring = "addrecurring";
     public const string AddPrepaidCredit = "addprepaidcredit";
 

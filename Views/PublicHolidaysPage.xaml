@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:AppPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:views="clr-namespace:Arctrix.PersonalMoneyTracker.Views"
+             xmlns:controls="clr-namespace:Arctrix.PersonalMoneyTracker.Controls"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Arctrix.PersonalMoneyTracker.ViewModels"
+             x:Class="Arctrix.PersonalMoneyTracker.Views.PublicHolidaysPage"
+             x:DataType="vm:PublicHolidaysViewModel"
+             Title="{Binding Title}">
+
+    <Grid x:Name="LayoutRoot"
+          HorizontalOptions="Center"
+          Padding="{StaticResource PagePaddingDesktop}"
+          ColumnDefinitions="*,340"
+          RowDefinitions="Auto,*"
+          ColumnSpacing="24"
+          RowSpacing="20">
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="LayoutStates">
+                <VisualState x:Name="Wide" />
+                <VisualState x:Name="Narrow">
+                    <VisualState.Setters>
+                        <Setter Property="Padding" Value="{StaticResource PagePaddingPhone}" />
+                        <Setter Property="ColumnDefinitions" Value="*" />
+                        <Setter Property="RowDefinitions" Value="Auto,Auto,*" />
+                        <Setter Property="ColumnSpacing" Value="0" />
+                        <Setter Property="RowSpacing" Value="12" />
+                        <Setter TargetName="Header" Property="Margin" Value="4,16,4,0" />
+                        <Setter TargetName="FormCard" Property="Grid.Row" Value="1" />
+                        <Setter TargetName="FormCard" Property="Grid.Column" Value="0" />
+                        <Setter TargetName="ListCard" Property="Grid.Row" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <Grid x:Name="Header" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*">
+            <controls:BackButton />
+            <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                <Label Text="{Binding Title}" Style="{StaticResource H1}" />
+                <Label Text="{Binding CountLabel}" Style="{StaticResource Body}" />
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- The list -->
+        <Border x:Name="ListCard" Grid.Row="1" Style="{StaticResource Card}" Padding="8,4">
+            <CollectionView ItemsSource="{Binding Holidays}" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PublicHolidayRowViewModel">
+                        <Border Background="Transparent" StrokeThickness="0" StrokeShape="RoundRectangle 12" Padding="12,10">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroupList>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal" />
+                                        <VisualState x:Name="PointerOver">
+                                            <VisualState.Setters>
+                                                <Setter Property="Background" Value="{StaticResource Surface2Brush}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateGroupList>
+                            </VisualStateManager.VisualStateGroups>
+
+                            <Grid ColumnDefinitions="140,*,Auto,Auto" ColumnSpacing="12">
+                                <Label Text="{Binding DateLabel}" Style="{StaticResource BodyStrong}" VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsPast}" Value="True">
+                                            <Setter Property="TextColor" Value="{StaticResource Muted}" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+
+                                <Label Grid.Column="1"
+                                       Text="{Binding Name}"
+                                       Style="{StaticResource Body}"
+                                       VerticalOptions="Center"
+                                       MaxLines="1"
+                                       LineBreakMode="TailTruncation" />
+
+                                <Button Grid.Column="2"
+                                        Text="Edit"
+                                        Style="{StaticResource GhostButton}"
+                                        FontSize="13"
+                                        Padding="12,0"
+                                        MinimumWidthRequest="48"
+                                        VerticalOptions="Center"
+                                        SemanticProperties.Description="{Binding Name, StringFormat='Edit {0}'}"
+                                        CommandParameter="{Binding .}">
+                                    <Button.Command>
+                                        <Binding Path="EditCommand"
+                                                 Source="{RelativeSource AncestorType={x:Type vm:PublicHolidaysViewModel}}"
+                                                 x:DataType="vm:PublicHolidaysViewModel" />
+                                    </Button.Command>
+                                </Button>
+
+                                <Button Grid.Column="3"
+                                        Text="Remove"
+                                        Style="{StaticResource GhostButton}"
+                                        FontSize="13"
+                                        Padding="12,0"
+                                        MinimumWidthRequest="48"
+                                        VerticalOptions="Center"
+                                        SemanticProperties.Description="{Binding Name, StringFormat='Remove {0}'}"
+                                        CommandParameter="{Binding .}">
+                                    <Button.Command>
+                                        <Binding Path="RemoveCommand"
+                                                 Source="{RelativeSource AncestorType={x:Type vm:PublicHolidaysViewModel}}"
+                                                 x:DataType="vm:PublicHolidaysViewModel" />
+                                    </Button.Command>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="16,48" Spacing="8" HorizontalOptions="Center">
+                        <Label Text="No holidays listed" Style="{StaticResource H3}" HorizontalTextAlignment="Center" />
+                        <Label Text="Add the days you don't work. Payments set to the last working day of the month skip them."
+                               Style="{StaticResource Body}"
+                               HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+            </CollectionView>
+        </Border>
+
+        <!-- Add or edit -->
+        <Border x:Name="FormCard" Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}" VerticalOptions="Start">
+            <VerticalStackLayout Spacing="16">
+                <Label Text="{Binding FormTitle}" Style="{StaticResource Overline}" />
+
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Date" Style="{StaticResource Overline}" />
+                    <Border Style="{StaticResource InputShell}">
+                        <DatePicker Date="{Binding NewDate}" Format="ddd d MMM yyyy" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Name" Style="{StaticResource Overline}" />
+                    <Border Style="{StaticResource InputShell}">
+                        <Entry Text="{Binding NewName}" Placeholder="e.g. Thaipusam" MaxLength="80" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorText}" IsVisible="{Binding HasError}" />
+
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <Button Grid.Column="0"
+                            Text="Cancel"
+                            Style="{StaticResource GhostButton}"
+                            IsVisible="{Binding IsEditing}"
+                            Command="{Binding CancelEditCommand}" />
+                    <Button Grid.Column="1" Text="{Binding AddLabel}" Command="{Binding SaveCommand}" />
+                </Grid>
+
+                <BoxView Style="{StaticResource Divider}" />
+
+                <Label Text="Seeded with Malaysia's national holidays. Islamic and lunar dates are the expected ones and are confirmed closer to the time, so check them - and add any state holidays that apply where you are."
+                       Style="{StaticResource Caption}" />
+            </VerticalStackLayout>
+        </Border>
+
+    </Grid>
+
+</views:AppPage>

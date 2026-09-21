@@ -35,6 +35,7 @@ public class AppDbContext
         await _connection.CreateTableAsync<RecurringPayment>();
         await _connection.CreateTableAsync<RecurringSkip>();
         await _connection.CreateTableAsync<PrepaidCredit>();
+        await _connection.CreateTableAsync<PublicHoliday>();
         await _connection.CreateTableAsync<AppSettings>();
 
         await SeedIfEmptyAsync();
@@ -114,6 +115,17 @@ public class AppDbContext
                 }
             });
             await Connection.InsertAllAsync(defaults);
+        }
+
+        // Malaysia's national holidays as a starting point; the user edits the list from Settings.
+        // Seeded only when empty, so removing one doesn't bring it back on the next launch.
+        if (await Connection.Table<PublicHoliday>().CountAsync() == 0)
+        {
+            await Connection.InsertAllAsync(PublicHoliday.MalaysiaDefaults.Select(h => new PublicHoliday
+            {
+                Date = h.Date,
+                Name = h.Name
+            }));
         }
 
         if (await Connection.Table<Account>().CountAsync() == 0)

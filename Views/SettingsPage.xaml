@@ -85,6 +85,22 @@
                 </VerticalStackLayout>
             </Border>
 
+            <!-- Public holidays -->
+            <Border Style="{StaticResource Card}" Padding="24">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Public holidays" Style="{StaticResource H2}" />
+                        <Label Text="Days that don't count as working days. Recurring payments set to the last working day of the month step back over them. Seeded with Malaysia's national holidays; yours to edit."
+                               Style="{StaticResource Body}" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1"
+                            Text="Manage"
+                            Style="{StaticResource SecondaryButton}"
+                            VerticalOptions="Center"
+                            Command="{Binding OpenPublicHolidaysCommand}" />
+                </Grid>
+            </Border>
+
             <!-- About -->
             <Border Style="{StaticResource Card}" Padding="24">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">

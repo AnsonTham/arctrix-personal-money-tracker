@@ -47,6 +47,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<ITransactionService, TransactionService>();
         builder.Services.AddSingleton<IRecurringPaymentService, RecurringPaymentService>();
         builder.Services.AddSingleton<IPrepaidCreditService, PrepaidCreditService>();
+        builder.Services.AddSingleton<IPublicHolidayService, PublicHolidayService>();
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
         builder.Services.AddSingleton<ICurrencyService, CurrencyService>();
         builder.Services.AddSingleton<IReceiptPhotoStore, ReceiptPhotoStore>();
@@ -78,6 +79,7 @@ public static class MauiProgram
         builder.Services.AddTransient<AddRecurringViewModel>();
         builder.Services.AddTransient<AddPrepaidCreditViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();
+        builder.Services.AddTransient<PublicHolidaysViewModel>();
         builder.Services.AddTransient<ReportsViewModel>();
         builder.Services.AddTransient<MoreViewModel>();
 
@@ -93,6 +95,7 @@ public static class MauiProgram
         builder.Services.AddTransient<AddRecurringPage>();
         builder.Services.AddTransient<AddPrepaidCreditPage>();
         builder.Services.AddTransient<SettingsPage>();
+        builder.Services.AddTransient<PublicHolidaysPage>();
         builder.Services.AddTransient<ReportsPage>();
         builder.Services.AddTransient<MorePage>();
 

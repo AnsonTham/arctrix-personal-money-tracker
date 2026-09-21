@@ -28,7 +28,13 @@ public enum RecurrenceRuleType
     FixedDayOfMonth,
 
     /// <summary>A weekday position, such as the last Friday - a date that moves from month to month.</summary>
-    NthWeekdayOfMonth
+    NthWeekdayOfMonth,
+
+    /// <summary>
+    /// The last day of the month that is actually worked: weekends and the listed public holidays
+    /// are stepped back over. Added last, so the numbers already stored keep their meaning.
+    /// </summary>
+    LastWorkingDayOfMonth
 }
 
 /// <summary>Which occurrence of a weekday within a month.</summary>

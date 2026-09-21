@@ -10,20 +10,24 @@ namespace Arctrix.PersonalMoneyTracker.ViewModels;
 public partial class AddRecurringViewModel : ViewModelBase
 {
     private readonly IRecurringPaymentService _recurring;
+    private readonly IPublicHolidayService _holidays;
     private readonly IAccountService _accounts;
     private readonly ICategoryService _categories;
     private readonly ISettingsService _settings;
 
     private bool _loaded;
     private List<Category> _allCategories = new();
+    private IReadOnlySet<DateTime> _holidayDates = new HashSet<DateTime>();
 
     public AddRecurringViewModel(
         IRecurringPaymentService recurring,
+        IPublicHolidayService holidays,
         IAccountService accounts,
         ICategoryService categories,
         ISettingsService settings)
     {
         _recurring = recurring;
+        _holidays = holidays;
         _accounts = accounts;
         _categories = categories;
         _settings = settings;
@@ -37,7 +41,8 @@ public partial class AddRecurringViewModel : ViewModelBase
         RuleOptions =
         [
             new RecurrenceRuleOption(RecurrenceRuleType.FixedDayOfMonth, "Day of month"),
-            new RecurrenceRuleOption(RecurrenceRuleType.NthWeekdayOfMonth, "Weekday")
+            new RecurrenceRuleOption(RecurrenceRuleType.NthWeekdayOfMonth, "Weekday"),
+            new RecurrenceRuleOption(RecurrenceRuleType.LastWorkingDayOfMonth, "Last working day")
         ];
         SyncTypeOptions();
         SyncRuleOptions();
@@ -55,6 +60,7 @@ public partial class AddRecurringViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(FirstPaymentLabel))]
     [NotifyPropertyChangedFor(nameof(UsesFixedDay))]
     [NotifyPropertyChangedFor(nameof(UsesWeekday))]
+    [NotifyPropertyChangedFor(nameof(UsesLastWorkingDay))]
     public partial RecurrenceRuleType RuleType { get; set; } = RecurrenceRuleType.FixedDayOfMonth;
 
     [ObservableProperty]
@@ -90,6 +96,7 @@ public partial class AddRecurringViewModel : ViewModelBase
 
     public bool UsesFixedDay => RuleType == RecurrenceRuleType.FixedDayOfMonth;
     public bool UsesWeekday => RuleType == RecurrenceRuleType.NthWeekdayOfMonth;
+    public bool UsesLastWorkingDay => RuleType == RecurrenceRuleType.LastWorkingDayOfMonth;
 
     public bool HasError => ErrorMessage.Length > 0;
 
@@ -98,8 +105,8 @@ public partial class AddRecurringViewModel : ViewModelBase
         get
         {
             var draft = Draft();
-            var first = RecurrenceSchedule.FirstOnOrAfter(draft, DateTime.Today);
-            var after = RecurrenceSchedule.Next(draft, first);
+            var first = RecurrenceSchedule.FirstOnOrAfter(draft, DateTime.Today, _holidayDates);
+            var after = RecurrenceSchedule.Next(draft, first, _holidayDates);
             return $"First posts on {first:ddd d MMM yyyy}, then {after:ddd d MMM yyyy}, and so on.";
         }
     }
@@ -120,6 +127,8 @@ public partial class AddRecurringViewModel : ViewModelBase
         _loaded = true;
 
         BaseCurrency = (await _settings.GetAsync()).BaseCurrency;
+        _holidayDates = await _holidays.GetDatesAsync();
+        OnPropertyChanged(nameof(FirstPaymentLabel));
 
         Accounts.Clear();
         foreach (var a in await _accounts.GetAllAsync()) Accounts.Add(a);
@@ -173,7 +182,7 @@ public partial class AddRecurringViewModel : ViewModelBase
         payment.CategoryId = SelectedCategory.Id;
         payment.Amount = amount;
         payment.Currency = BaseCurrency;
-        payment.NextDueDate = RecurrenceSchedule.FirstOnOrAfter(payment, DateTime.Today);
+        payment.NextDueDate = RecurrenceSchedule.FirstOnOrAfter(payment, DateTime.Today, _holidayDates);
         await _recurring.SaveAsync(payment);
 
         await Shell.Current.GoToAsync("..");

@@ -44,16 +44,22 @@ public class RecurringPaymentService : IRecurringPaymentService
     private readonly AppDbContext _db;
     private readonly ISettingsService _settings;
     private readonly ICurrencyService _currency;
+    private readonly IPublicHolidayService _holidays;
 
     // The service is a singleton; this keeps two overlapping runs (e.g. the Dashboard
     // appearing twice in quick succession) from both posting the same occurrence.
     private readonly SemaphoreSlim _runLock = new(1, 1);
 
-    public RecurringPaymentService(AppDbContext db, ISettingsService settings, ICurrencyService currency)
+    public RecurringPaymentService(
+        AppDbContext db,
+        ISettingsService settings,
+        ICurrencyService currency,
+        IPublicHolidayService holidays)
     {
         _db = db;
         _settings = settings;
         _currency = currency;
+        _holidays = holidays;
     }
 
     public async Task<List<RecurringPayment>> GetAllAsync(bool includeInactive = false)
@@ -90,6 +96,11 @@ public class RecurringPaymentService : IRecurringPaymentService
             await _db.InitializeAsync();
             var today = DateTime.Today;
             var baseCurrency = (await _settings.GetAsync()).BaseCurrency;
+            var holidays = await _holidays.GetDatesAsync();
+
+            // A holiday added or removed since last time moves a working-day schedule, so the
+            // stored date is re-checked before anything is posted rather than left stale.
+            await RefreshWorkingDayDatesAsync(holidays);
             var posted = 0;
             var resolved = 0;
             var skipped = new List<RecurringSkip>();
@@ -129,7 +140,7 @@ public class RecurringPaymentService : IRecurringPaymentService
                             }
 
                             payment.LastRunDate = dueDate;
-                            payment.NextDueDate = RecurrenceSchedule.Next(payment, dueDate);
+                            payment.NextDueDate = RecurrenceSchedule.Next(payment, dueDate, holidays);
                             conn.Update(payment);
                         });
                     }
@@ -154,6 +165,29 @@ public class RecurringPaymentService : IRecurringPaymentService
         finally
         {
             _runLock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Recomputes the stored due date of every last-working-day payment whose month's answer has
+    /// changed - a holiday the user added or removed afterwards. The date is recomputed within the
+    /// month it already sits in, so an occurrence never jumps to a different month; an overdue one
+    /// stays overdue and is posted on the corrected date by the loop below.
+    /// </summary>
+    private async Task RefreshWorkingDayDatesAsync(IReadOnlySet<DateTime> holidays)
+    {
+        foreach (var payment in await GetAllAsync())
+        {
+            if (payment.RuleType != RecurrenceRuleType.LastWorkingDayOfMonth)
+                continue;
+
+            var due = payment.NextDueDate.Date;
+            var expected = RecurrenceSchedule.InMonth(payment, due.Year, due.Month, holidays);
+            if (expected == due)
+                continue;
+
+            payment.NextDueDate = expected;
+            await _db.Connection.UpdateAsync(payment);
         }
     }
 

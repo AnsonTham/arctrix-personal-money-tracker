@@ -50,6 +50,9 @@ public partial class SettingsViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private Task OpenPublicHolidays() => Shell.Current.GoToAsync(Helpers.Routes.PublicHolidays);
+
+    [RelayCommand]
     public async Task LoadAsync()
     {
         var settings = await _settings.GetAsync();
