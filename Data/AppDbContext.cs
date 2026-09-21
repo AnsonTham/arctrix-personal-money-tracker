@@ -39,6 +39,7 @@ public class AppDbContext
 
         await SeedIfEmptyAsync();
         await StampRecordedBaseCurrencyAsync();
+        await StampRecurrenceRulesAsync();
         await UpdateSeededCategoryIconsAsync();
     }
 
@@ -55,6 +56,24 @@ public class AppDbContext
                 $"WHERE {nameof(Category.IsSystem)} = 1 AND {nameof(Category.Name)} = ? AND {nameof(Category.Icon)} <> ?",
                 icon, name, icon);
         }
+    }
+
+    /// <summary>
+    /// Recurring payments saved before the weekday rule existed have null in its columns, which is
+    /// read back as the fixed-day rule they already used. Writing the values down makes that
+    /// explicit rather than relying on how a null maps. A no-op once stamped.
+    /// </summary>
+    private async Task StampRecurrenceRulesAsync()
+    {
+        await Connection.ExecuteAsync(
+            $"UPDATE {nameof(RecurringPayment)} SET " +
+            $"{nameof(RecurringPayment.RuleType)} = ?, " +
+            $"{nameof(RecurringPayment.Weekday)} = ?, " +
+            $"{nameof(RecurringPayment.Occurrence)} = ? " +
+            $"WHERE {nameof(RecurringPayment.RuleType)} IS NULL",
+            (int)RecurrenceRuleType.FixedDayOfMonth,
+            (int)DayOfWeek.Friday,
+            (int)MonthlyOccurrence.Last);
     }
 
     /// <summary>

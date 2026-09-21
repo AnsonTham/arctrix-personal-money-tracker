@@ -34,7 +34,13 @@ public partial class AddRecurringViewModel : ViewModelBase
             new FilterOption("Expense", TransactionType.Expense),
             new FilterOption("Income", TransactionType.Income)
         ];
+        RuleOptions =
+        [
+            new RecurrenceRuleOption(RecurrenceRuleType.FixedDayOfMonth, "Day of month"),
+            new RecurrenceRuleOption(RecurrenceRuleType.NthWeekdayOfMonth, "Weekday")
+        ];
         SyncTypeOptions();
+        SyncRuleOptions();
     }
 
     [ObservableProperty] public partial string Name { get; set; } = string.Empty;
@@ -45,6 +51,20 @@ public partial class AddRecurringViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(FirstPaymentLabel))]
     public partial int DayOfMonth { get; set; } = 1;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FirstPaymentLabel))]
+    [NotifyPropertyChangedFor(nameof(UsesFixedDay))]
+    [NotifyPropertyChangedFor(nameof(UsesWeekday))]
+    public partial RecurrenceRuleType RuleType { get; set; } = RecurrenceRuleType.FixedDayOfMonth;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FirstPaymentLabel))]
+    public partial DayOfWeek Weekday { get; set; } = DayOfWeek.Friday;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FirstPaymentLabel))]
+    public partial MonthlyOccurrence Occurrence { get; set; } = MonthlyOccurrence.Last;
+
     [ObservableProperty] public partial Account? SelectedAccount { get; set; }
     [ObservableProperty] public partial Category? SelectedCategory { get; set; }
     [ObservableProperty] public partial string BaseCurrency { get; set; } = "MYR";
@@ -54,19 +74,43 @@ public partial class AddRecurringViewModel : ViewModelBase
     public partial string ErrorMessage { get; set; } = string.Empty;
 
     public IReadOnlyList<FilterOption> TypeOptions { get; }
+    public IReadOnlyList<RecurrenceRuleOption> RuleOptions { get; }
     public ObservableCollection<CategoryOption> CategoryOptions { get; } = new();
     public ObservableCollection<Account> Accounts { get; } = new();
     public int[] DaysOfMonth { get; } = Enumerable.Range(1, 31).ToArray();
 
+    /// <summary>Monday first: a pay date is easier to find in a working week.</summary>
+    public DayOfWeek[] Weekdays { get; } =
+    [
+        DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday,
+        DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday
+    ];
+
+    public MonthlyOccurrence[] Occurrences { get; } = Enum.GetValues<MonthlyOccurrence>();
+
+    public bool UsesFixedDay => RuleType == RecurrenceRuleType.FixedDayOfMonth;
+    public bool UsesWeekday => RuleType == RecurrenceRuleType.NthWeekdayOfMonth;
+
     public bool HasError => ErrorMessage.Length > 0;
 
-    public string FirstPaymentLabel => $"First posts on {NextDueDate(DayOfMonth):d MMM yyyy}, then every month.";
+    public string FirstPaymentLabel
+    {
+        get
+        {
+            var draft = Draft();
+            var first = RecurrenceSchedule.FirstOnOrAfter(draft, DateTime.Today);
+            var after = RecurrenceSchedule.Next(draft, first);
+            return $"First posts on {first:ddd d MMM yyyy}, then {after:ddd d MMM yyyy}, and so on.";
+        }
+    }
 
     partial void OnTypeChanged(TransactionType value)
     {
         SyncTypeOptions();
         RefreshCategories();
     }
+
+    partial void OnRuleTypeChanged(RecurrenceRuleType value) => SyncRuleOptions();
 
     [RelayCommand]
     public async Task LoadAsync()
@@ -91,6 +135,9 @@ public partial class AddRecurringViewModel : ViewModelBase
         if (option.Type is TransactionType type)
             Type = type;
     }
+
+    [RelayCommand]
+    private void SelectRule(RecurrenceRuleOption option) => RuleType = option.Rule;
 
     [RelayCommand]
     private void SelectCategory(CategoryOption option)
@@ -121,18 +168,13 @@ public partial class AddRecurringViewModel : ViewModelBase
             return;
         }
 
-        await _recurring.SaveAsync(new RecurringPayment
-        {
-            Name = Name.Trim(),
-            Type = Type,
-            AccountId = SelectedAccount.Id,
-            CategoryId = SelectedCategory.Id,
-            Amount = amount,
-            Currency = BaseCurrency,
-            DayOfMonth = DayOfMonth,
-            NextDueDate = NextDueDate(DayOfMonth),
-            IsActive = true
-        });
+        var payment = Draft();
+        payment.AccountId = SelectedAccount.Id;
+        payment.CategoryId = SelectedCategory.Id;
+        payment.Amount = amount;
+        payment.Currency = BaseCurrency;
+        payment.NextDueDate = RecurrenceSchedule.FirstOnOrAfter(payment, DateTime.Today);
+        await _recurring.SaveAsync(payment);
 
         await Shell.Current.GoToAsync("..");
     }
@@ -140,23 +182,23 @@ public partial class AddRecurringViewModel : ViewModelBase
     [RelayCommand]
     private Task Cancel() => Shell.Current.GoToAsync("..");
 
-    /// <summary>
-    /// The first date on or after today that falls on <paramref name="dayOfMonth"/>, clamped to
-    /// each month's length (31 becomes 30 Sep, but still 31 Oct).
-    /// </summary>
-    private static DateTime NextDueDate(int dayOfMonth)
+    /// <summary>The payment as the form currently describes it, for previewing and for saving.</summary>
+    private RecurringPayment Draft() => new()
     {
-        var today = DateTime.Today;
-        var thisMonth = OnDay(today.Year, today.Month, dayOfMonth);
-        if (thisMonth >= today)
-            return thisMonth;
+        Name = Name.Trim(),
+        Type = Type,
+        RuleType = RuleType,
+        DayOfMonth = DayOfMonth,
+        Weekday = Weekday,
+        Occurrence = Occurrence,
+        IsActive = true
+    };
 
-        var next = today.AddMonths(1);
-        return OnDay(next.Year, next.Month, dayOfMonth);
+    private void SyncRuleOptions()
+    {
+        foreach (var option in RuleOptions)
+            option.IsSelected = option.Rule == RuleType;
     }
-
-    private static DateTime OnDay(int year, int month, int day)
-        => new(year, month, Math.Min(day, DateTime.DaysInMonth(year, month)));
 
     private void SyncTypeOptions()
     {

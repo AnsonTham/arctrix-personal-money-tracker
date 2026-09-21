@@ -80,6 +80,40 @@
                         </FlexLayout>
                     </VerticalStackLayout>
 
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Repeats on" Style="{StaticResource Overline}" />
+                        <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding RuleOptions}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:RecurrenceRuleOption">
+                                    <Border Style="{StaticResource Chip}" Margin="0,0,8,8">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer CommandParameter="{Binding .}">
+                                                <TapGestureRecognizer.Command>
+                                                    <Binding Path="SelectRuleCommand"
+                                                             Source="{RelativeSource AncestorType={x:Type vm:AddRecurringViewModel}}"
+                                                             x:DataType="vm:AddRecurringViewModel" />
+                                                </TapGestureRecognizer.Command>
+                                            </TapGestureRecognizer>
+                                        </Border.GestureRecognizers>
+                                        <Border.Triggers>
+                                            <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+                                                <Setter Property="Stroke" Value="{StaticResource AccentBrush}" />
+                                            </DataTrigger>
+                                        </Border.Triggers>
+                                        <Label Text="{Binding Label}" FontFamily="InterMedium" FontSize="13" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="TextColor" Value="{StaticResource Accent}" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+                    </VerticalStackLayout>
+
                     <Grid ColumnDefinitions="*,150" ColumnSpacing="16">
                         <VerticalStackLayout Spacing="10">
                             <Label Text="Amount" Style="{StaticResource Overline}" />
@@ -90,11 +124,31 @@
                                 </Grid>
                             </Border>
                         </VerticalStackLayout>
-                        <VerticalStackLayout Grid.Column="1" Spacing="10">
+                        <VerticalStackLayout Grid.Column="1" Spacing="10" IsVisible="{Binding UsesFixedDay}">
                             <Label Text="Day of month" Style="{StaticResource Overline}" />
                             <Border Style="{StaticResource InputShell}">
                                 <controls:PickerField>
                                     <Picker ItemsSource="{Binding DaysOfMonth}" SelectedItem="{Binding DayOfMonth}" />
+                                </controls:PickerField>
+                            </Border>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <!-- Shown instead of the day number for a weekday rule: "last Friday" and the like. -->
+                    <Grid x:Name="WeekdayRow" ColumnDefinitions="*,*" ColumnSpacing="16" IsVisible="{Binding UsesWeekday}">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="Which one" Style="{StaticResource Overline}" />
+                            <Border Style="{StaticResource InputShell}">
+                                <controls:PickerField>
+                                    <Picker ItemsSource="{Binding Occurrences}" SelectedItem="{Binding Occurrence}" />
+                                </controls:PickerField>
+                            </Border>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="10">
+                            <Label Text="Weekday" Style="{StaticResource Overline}" />
+                            <Border Style="{StaticResource InputShell}">
+                                <controls:PickerField>
+                                    <Picker ItemsSource="{Binding Weekdays}" SelectedItem="{Binding Weekday}" />
                                 </controls:PickerField>
                             </Border>
                         </VerticalStackLayout>

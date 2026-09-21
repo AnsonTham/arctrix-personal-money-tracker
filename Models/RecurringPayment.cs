@@ -28,8 +28,20 @@ public class RecurringPayment
 
     public RecurrenceFrequency Frequency { get; set; } = RecurrenceFrequency.Monthly;
 
-    /// <summary>Day of month (1-31) this payment is due; clamped to the shorter months.</summary>
+    /// <summary>
+    /// How the due date is chosen. Added after the fact, and the original behaviour is the zero
+    /// value, so rows saved before this column existed keep their fixed-day schedule untouched.
+    /// </summary>
+    public RecurrenceRuleType RuleType { get; set; } = RecurrenceRuleType.FixedDayOfMonth;
+
+    /// <summary>Day of month (1-31) this payment is due; clamped to the shorter months. Used by <see cref="RecurrenceRuleType.FixedDayOfMonth"/>.</summary>
     public int DayOfMonth { get; set; } = 1;
+
+    /// <summary>The weekday for <see cref="RecurrenceRuleType.NthWeekdayOfMonth"/>, e.g. Friday.</summary>
+    public DayOfWeek Weekday { get; set; } = DayOfWeek.Friday;
+
+    /// <summary>Which <see cref="Weekday"/> in the month, e.g. Last for "last Friday".</summary>
+    public MonthlyOccurrence Occurrence { get; set; } = MonthlyOccurrence.Last;
 
     public DateTime NextDueDate { get; set; } = DateTime.Now;
 

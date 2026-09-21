@@ -129,7 +129,7 @@ public class RecurringPaymentService : IRecurringPaymentService
                             }
 
                             payment.LastRunDate = dueDate;
-                            payment.NextDueDate = SafeAddMonth(dueDate, payment.DayOfMonth);
+                            payment.NextDueDate = RecurrenceSchedule.Next(payment, dueDate);
                             conn.Update(payment);
                         });
                     }
@@ -222,13 +222,5 @@ public class RecurringPaymentService : IRecurringPaymentService
         return conn.Table<TransactionRecord>()
             .Where(t => t.RecurringPaymentId == paymentId && t.Date >= dueDate && t.Date < nextDay)
             .Count() > 0;
-    }
-
-    private static DateTime SafeAddMonth(DateTime from, int dayOfMonth)
-    {
-        var next = from.AddMonths(1);
-        var daysInMonth = DateTime.DaysInMonth(next.Year, next.Month);
-        var day = Math.Min(dayOfMonth, daysInMonth);
-        return new DateTime(next.Year, next.Month, day);
     }
 }

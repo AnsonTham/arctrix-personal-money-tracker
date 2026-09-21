@@ -20,3 +20,25 @@ public enum RecurrenceFrequency
 {
     Monthly
 }
+
+/// <summary>How a monthly recurrence picks its date.</summary>
+public enum RecurrenceRuleType
+{
+    /// <summary>The same day number every month, clamped to shorter months. The original behaviour.</summary>
+    FixedDayOfMonth,
+
+    /// <summary>A weekday position, such as the last Friday - a date that moves from month to month.</summary>
+    NthWeekdayOfMonth
+}
+
+/// <summary>Which occurrence of a weekday within a month.</summary>
+public enum MonthlyOccurrence
+{
+    First,
+    Second,
+    Third,
+    Fourth,
+
+    /// <summary>The last one in the month, which is the fourth or the fifth depending on the month.</summary>
+    Last
+}

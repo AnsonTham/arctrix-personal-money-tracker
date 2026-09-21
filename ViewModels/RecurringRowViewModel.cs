@@ -29,7 +29,7 @@ public class RecurringRowViewModel
 
     public string AmountLabel => $"{(IsIncome ? "+ " : "- ")}{Payment.Currency} {Payment.Amount:N2}";
 
-    public string ScheduleLabel => $"{CategoryName} · {AccountName} · {Ordinal(Payment.DayOfMonth)} of each month";
+    public string ScheduleLabel => $"{CategoryName} · {AccountName} · {Services.RecurrenceSchedule.Describe(Payment)}";
 
     public bool IsOverdue => Payment.NextDueDate.Date < DateTime.Today;
 
@@ -48,12 +48,4 @@ public class RecurringRowViewModel
             };
         }
     }
-
-    private static string Ordinal(int day) => day switch
-    {
-        1 or 21 or 31 => $"{day}st",
-        2 or 22 => $"{day}nd",
-        3 or 23 => $"{day}rd",
-        _ => $"{day}th"
-    };
 }
